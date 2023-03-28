@@ -312,13 +312,21 @@ class AmazonRepository:
 				sales_order.per_billed = "100"
 				sales_order.per_delivered = "100"
 				sales_order.per_picked = "100"
+
+			taxes_and_charges = self.amz_setting.taxes_charges
+
+			if taxes_and_charges:
+				charges_and_fees = self.get_charges_and_fees(order_id)
+				for charge in charges_and_fees.get("charges"):
+					sales_order.append("taxes", charge)
+				for fee in charges_and_fees.get("fees"):
+					sales_order.append("taxes", fee)
 			
 			sales_order.save()
 
 			if order_status == 'Shipped':
 				sales_order.submit()
 			
-			frappe.db.commit()
 			return sales_order.name
 		else:
 			items = self.get_order_items(order_id)
@@ -387,7 +395,7 @@ class AmazonRepository:
 			if order_status == 'Shipped':
 				sales_order.submit()
 
-			frappe.db.commit()
+			
 			return sales_order.name
 
 	def get_orders(self, last_updated_after):
