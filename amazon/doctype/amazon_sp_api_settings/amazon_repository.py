@@ -285,6 +285,8 @@ class AmazonRepository:
 
 		if sales_order:
 			sales_order = frappe.get_last_doc('Sales Order', filters={"amazon_order_id": order_id})
+			if sales_order.delivery_status == "Fully Delivered":
+				return sales_order.name
 			order_status = order.get("OrderStatus")
 			if order_status == 'Unshipped':
 				sales_order.billing_status = "Not Billed"
