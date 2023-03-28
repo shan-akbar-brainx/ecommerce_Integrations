@@ -284,7 +284,42 @@ class AmazonRepository:
 		)
 
 		if sales_order:
-			return sales_order
+			sales_order = frappe.get_last_doc('Sales Order', filters={"amazon_order_id": order_id})
+			order_status = order.get("OrderStatus")
+			if order_status == 'Unshipped':
+				sales_order.billing_status = "Not Billed"
+				sales_order.delivery_status =  "Not Delivered"
+
+			if order_status == 'PartiallyShipped':
+				sales_order.billing_status = "Not Billed"
+				sales_order.delivery_status =  "Partly Delivered"
+
+			if order_status == 'Pending' or order_status == 'PendingAvailability':
+				sales_order.billing_status = "Not Billed"
+				sales_order.delivery_status =  "Not Delivered"
+
+			if order_status == 'InvoiceUnconfirmed':
+				sales_order.billing_status = "Not Billed"
+				sales_order.delivery_status =  "Not Delivered"
+			
+			if order_status == 'Unfulfillable':
+				sales_order.billing_status = "Not Billed"
+				sales_order.delivery_status =  "Not Delivered"
+
+			if order_status == 'Shipped':
+				sales_order.billing_status = "Fully Billed"
+				sales_order.delivery_status =  "Fully Delivered"
+				sales_order.per_billed = "100"
+				sales_order.per_delivered = "100"
+				sales_order.per_picked = "100"
+			
+			sales_order.save()
+
+			if order_status == 'Shipped':
+				sales_order.submit()
+			
+			frappe.db.commit()
+			return sales_order.name
 		else:
 			items = self.get_order_items(order_id)
 			if(len(items) == 0):
@@ -318,13 +353,44 @@ class AmazonRepository:
 					sales_order.append("taxes", fee)
 
 			
+			order_status = order.get("OrderStatus")
+			if order_status == 'Unshipped':
+				sales_order.billing_status = "Not Billed"
+				sales_order.delivery_status =  "Not Delivered"
+
+			if order_status == 'PartiallyShipped':
+				sales_order.billing_status = "Not Billed"
+				sales_order.delivery_status =  "Partly Delivered"
+
+			if order_status == 'Pending' or order_status == 'PendingAvailability':
+				sales_order.billing_status = "Not Billed"
+				sales_order.delivery_status =  "Not Delivered"
+
+			if order_status == 'InvoiceUnconfirmed':
+				sales_order.billing_status = "Not Billed"
+				sales_order.delivery_status =  "Not Delivered"
+			
+			if order_status == 'Unfulfillable':
+				sales_order.billing_status = "Not Billed"
+				sales_order.delivery_status =  "Not Delivered"
+
+			if order_status == 'Shipped':
+				sales_order.billing_status = "Fully Billed"
+				sales_order.delivery_status =  "Fully Delivered"
+				sales_order.per_billed = "100"
+				sales_order.per_delivered = "100"
+				sales_order.per_picked = "100"
 			
 			sales_order.insert()
+			sales_order.save()
 
+			if order_status == 'Shipped':
+				sales_order.submit()
 
+			frappe.db.commit()
 			return sales_order.name
 
-	def get_orders(self, created_after):
+	def get_orders(self, last_updated_after):
 		orders = self.get_orders_instance()
 		order_statuses = [
 			"PendingAvailability",
@@ -339,7 +405,7 @@ class AmazonRepository:
 
 		orders_payload = self.call_sp_api_method(
 			sp_api_method=orders.get_orders,
-			created_after=created_after,
+			last_updated_after=last_updated_after,
 			order_statuses=order_statuses,
 			fulfillment_channels=fulfillment_channels,
 			max_results=50,
@@ -365,7 +431,7 @@ class AmazonRepository:
 				break
 
 			orders_payload = self.call_sp_api_method(
-				sp_api_method=orders.get_orders, created_after=created_after, next_token=next_token
+				sp_api_method=orders.get_orders, last_updated_after=last_updated_after, next_token=next_token
 			)
 			
 		return sales_orders
@@ -569,9 +635,9 @@ def validate_amazon_sp_api_credentials(**args):
 		frappe.throw(msg)
 
 
-def get_orders(amz_setting_name, created_after):
+def get_orders(amz_setting_name, last_updated_after):
 	amazon_repository = AmazonRepository(amz_setting_name)
-	return amazon_repository.get_orders(created_after)
+	return amazon_repository.get_orders(last_updated_after)
 
 
 def get_products_details(amz_setting_name):

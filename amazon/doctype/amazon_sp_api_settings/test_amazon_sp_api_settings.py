@@ -88,9 +88,9 @@ class TestFinances(Finances, TestSPAPI):
 class TestOrders(Orders, TestSPAPI):
 	def get_orders(
 		self,
-		created_after: str,
+		last_updated_after: str,
 		created_before: str = None,
-		last_updated_after: str = None,
+		created_after: str = None,
 		last_updated_before: str = None,
 		order_statuses: list = None,
 		marketplace_ids: list = None,

@@ -51,7 +51,7 @@ class AmazonSPAPISettings(Document):
 	@frappe.whitelist()
 	def get_order_details(self):
 		if self.is_active == 1:
-			get_orders(amz_setting_name=self.name, created_after=self.after_date)
+			get_orders(amz_setting_name=self.name, last_updated_after=self.after_date)
 
 
 # Called via a hook in every hour.
@@ -62,7 +62,7 @@ def schedule_get_order_details():
 
 	for amz_setting in amz_settings:
 		after_date = frappe.get_value("Amazon SP API Settings", amz_setting, "after_date")
-		get_orders(amz_setting_name=amz_setting, created_after=after_date)
+		get_orders(amz_setting_name=amz_setting, last_updated_after=after_date)
 
 # Called via a hook in every 10 minutes
 def schedule_get_order_details_10_mins():
@@ -79,7 +79,7 @@ def schedule_get_order_details_10_mins():
 		new_swipe_in = new_swipe_in.astimezone(timezone('US/Pacific'))
 		after_date = new_swipe_in.isoformat()
 		print(after_date)
-		get_orders(amz_setting_name=amz_setting, created_after=after_date)
+		get_orders(amz_setting_name=amz_setting, last_updated_after=after_date)
 
 def setup_custom_fields():
 	custom_fields = {
