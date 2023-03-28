@@ -330,7 +330,7 @@ class AmazonRepository:
 			if order_status == 'Shipped':
 				sales_order.submit()
 			
-			# frappe.db.commit()
+			frappe.db.commit()
 			
 			return sales_order.name
 		else:
@@ -400,7 +400,7 @@ class AmazonRepository:
 			if order_status == 'Shipped':
 				sales_order.submit()
 
-			# frappe.db.commit()
+			frappe.db.commit()
 			return sales_order.name
 
 	def get_orders(self, last_updated_after):
