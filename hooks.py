@@ -138,12 +138,15 @@ scheduler_events = {
 	"weekly": [],
 	"monthly": [],
 	"cron": {
-		# Every ten minutes
-		"*/10 * * * *": [
+		# Every five minutes
+		"*/5 * * * *": [
 			"ecommerce_integrations.unicommerce.order.sync_new_orders",
-			"ecommerce_integrations.unicommerce.inventory.update_inventory_on_unicommerce",
-			"ecommerce_integrations.amazon.doctype.amazon_sp_api_settings.amazon_sp_api_settings.schedule_get_order_details_10_mins",
+			"ecommerce_integrations.unicommerce.inventory.update_inventory_on_unicommerce"
 		],
+		#Every 10 minutes
+		"*/10 * * * *":[
+			"ecommerce_integrations.amazon.doctype.amazon_sp_api_settings.amazon_sp_api_settings.schedule_get_order_details_10_mins"
+		]
 	},
 }
 
