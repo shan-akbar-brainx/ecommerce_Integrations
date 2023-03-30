@@ -141,7 +141,7 @@ class AmazonRepository:
 				order_id=order_id,
 				next_token=next_token,
 			)
-		
+		print(charges_and_fees)
 		return charges_and_fees
 
 	# Orders Section
