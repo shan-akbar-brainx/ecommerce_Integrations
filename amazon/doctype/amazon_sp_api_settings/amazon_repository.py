@@ -4,8 +4,9 @@
 
 import time
 import urllib.request
-
+from json import dumps
 import dateutil
+import os
 import frappe
 from frappe import _
 
@@ -141,7 +142,12 @@ class AmazonRepository:
 				order_id=order_id,
 				next_token=next_token,
 			)
-		print(charges_and_fees)
+		f = open('logs.txt', "a")
+		converted = dumps(charges_and_fees)
+		f.write(converted)
+		f.write("\n")
+		f.close()
+		
 		return charges_and_fees
 
 	# Orders Section
