@@ -84,6 +84,10 @@ class AmazonRepository:
 		financial_events_payload = self.call_sp_api_method(
 			sp_api_method=finances.list_financial_events_by_order_id, order_id=order_id
 		)
+
+		converted = dumps(order_id)
+		f.write(converted)
+		f.write("\n")
 		converted = dumps(financial_events_payload)
 		f.write(converted)
 		f.write("\n")
