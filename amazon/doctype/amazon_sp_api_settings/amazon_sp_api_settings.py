@@ -51,7 +51,7 @@ class AmazonSPAPISettings(Document):
 	@frappe.whitelist()
 	def get_order_details(self):
 		if self.is_active == 1:
-			get_orders(amz_setting_name=self.name, last_updated_after=self.after_date)
+			get_orders(amz_setting_name=self.name, last_updated_after=self.after_date, last_updated_before=None)
 
 
 # Called via a hook in every hour.
@@ -62,7 +62,7 @@ def schedule_get_order_details():
 
 	for amz_setting in amz_settings:
 		after_date = frappe.get_value("Amazon SP API Settings", amz_setting, "after_date")
-		get_orders(amz_setting_name=amz_setting, last_updated_after=after_date)
+		get_orders(amz_setting_name=amz_setting, last_updated_after=after_date, last_updated_before=None)
 
 # Called via a hook in every 10 minutes
 def schedule_get_order_details_10_mins():
@@ -75,11 +75,15 @@ def schedule_get_order_details_10_mins():
 		after_date = frappe.get_value("Amazon SP API Settings", amz_setting, "after_date")
 		print(after_date)
 		swipe_in  = datetime.datetime.today()
-		new_swipe_in = (swipe_in - timedelta(minutes=10))
-		new_swipe_in = new_swipe_in.astimezone(timezone('US/Pacific'))
-		after_date = new_swipe_in.isoformat()
+		new_swipe_in_after = (swipe_in - timedelta(minutes=20))
+		new_swipe_in_before = (swipe_in - timedelta(minutes=10))
+		new_swipe_in_after = new_swipe_in_after.astimezone(timezone('US/Pacific'))
+		new_swipe_in_before = new_swipe_in_before.astimezone(timezone('US/Pacific'))
+		after_date = new_swipe_in_after.isoformat()
+		before_date = new_swipe_in_before.isoformat()
 		print(after_date)
-		get_orders(amz_setting_name=amz_setting, last_updated_after=after_date)
+		print(before_date)
+		get_orders(amz_setting_name=amz_setting, last_updated_after=after_date, last_updated_before=before_date)
 
 def setup_custom_fields():
 	custom_fields = {
