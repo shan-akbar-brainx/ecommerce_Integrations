@@ -51,7 +51,7 @@ class AmazonSPAPISettings(Document):
 	@frappe.whitelist()
 	def get_order_details(self):
 		if self.is_active == 1:
-			get_orders(amz_setting_name=self.name, last_updated_after=self.after_date)
+			get_orders(amz_setting_name=self.name, last_updated_after=self.after_date, last_updated_before=None)
 
 
 # Called via a hook in every hour.
@@ -62,7 +62,7 @@ def schedule_get_order_details():
 
 	for amz_setting in amz_settings:
 		after_date = frappe.get_value("Amazon SP API Settings", amz_setting, "after_date")
-		get_orders(amz_setting_name=amz_setting, last_updated_after=after_date)
+		get_orders(amz_setting_name=amz_setting, last_updated_after=after_date, last_updated_before=None)
 
 # Called via a hook in every 10 minutes
 def schedule_get_order_details_10_mins():
