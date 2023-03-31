@@ -88,9 +88,7 @@ class AmazonRepository:
 		converted = dumps(order_id)
 		f.write(converted)
 		f.write("\n")
-		converted = dumps(financial_events_payload)
-		f.write(converted)
-		f.write("\n")
+		
 		charges_and_fees = {"charges": [], "fees": []}
 		
 		while True:
@@ -284,6 +282,7 @@ class AmazonRepository:
 		return final_order_items
 
 	def create_sales_order(self, order):
+		f = open('logs-orders.txt', "a")
 		
 		
 		customer_name = self.create_customer(order)
@@ -291,7 +290,11 @@ class AmazonRepository:
 		self.create_address(order, customer_name)
 
 		order_id = order.get("AmazonOrderId")
-	
+		
+		f.write(order_id)
+		f.write("/n")
+		f.close()
+		
 		sales_order = frappe.db.get_value(
 			"Sales Order", filters={"amazon_order_id": order_id}, fieldname="name"
 		)
@@ -301,8 +304,6 @@ class AmazonRepository:
 			if sales_order.delivery_status == "Fully Delivered":
 				return sales_order.name
 
-			
-					
 			order_status = order.get("OrderStatus")
 			if order_status == 'Unshipped':
 				sales_order.billing_status = "Not Billed"
