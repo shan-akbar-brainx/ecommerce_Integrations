@@ -282,14 +282,16 @@ class AmazonRepository:
 		return final_order_items
 
 	def create_sales_order(self, order):
-		
+		f = open("logs-orders.txt")
 		customer_name = self.create_customer(order)
 
 		self.create_address(order, customer_name)
 
 		order_id = order.get("AmazonOrderId")
 		
-		
+		f.write(order_id)
+		f.write("\n")
+		f.close()
 		
 		
 		sales_order = frappe.db.get_value(
@@ -343,7 +345,7 @@ class AmazonRepository:
 			if order_status == 'Shipped':
 				sales_order.submit()
 			
-			
+			frappe.db.commit()
 			
 			return sales_order.name
 		else:
@@ -411,6 +413,8 @@ class AmazonRepository:
 			if order_status == 'Shipped':
 				sales_order.submit()
 
+			frappe.db.commit()
+			
 			return sales_order.name
 
 	def get_orders(self, last_updated_after, last_updated_before):
