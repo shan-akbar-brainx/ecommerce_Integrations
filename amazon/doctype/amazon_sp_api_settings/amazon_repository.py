@@ -292,8 +292,8 @@ class AmazonRepository:
 		order_id = order.get("AmazonOrderId")
 		
 		f.write(order_id)
-		f.write("/n")
-		f.close()
+		f.write("\n")
+		
 		
 		sales_order = frappe.db.get_value(
 			"Sales Order", filters={"amazon_order_id": order_id}, fieldname="name"
@@ -305,6 +305,7 @@ class AmazonRepository:
 				return sales_order.name
 
 			order_status = order.get("OrderStatus")
+			f.write(order_status)
 			if order_status == 'Unshipped':
 				sales_order.billing_status = "Not Billed"
 				sales_order.delivery_status =  "Not Delivered"
@@ -371,6 +372,7 @@ class AmazonRepository:
 
 			
 			order_status = order.get("OrderStatus")
+			f.write(order_status)
 			if order_status == 'Unshipped':
 				sales_order.billing_status = "Not Billed"
 				sales_order.delivery_status =  "Not Delivered"
@@ -412,7 +414,7 @@ class AmazonRepository:
 			if order_status == 'Shipped':
 				sales_order.submit()
 
-			
+			f.close()
 			return sales_order.name
 
 	def get_orders(self, last_updated_after):
