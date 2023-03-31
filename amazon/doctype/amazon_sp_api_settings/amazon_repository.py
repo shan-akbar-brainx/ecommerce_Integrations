@@ -282,25 +282,21 @@ class AmazonRepository:
 		return final_order_items
 
 	def create_sales_order(self, order):
-		f = open("logs-orders.txt")
+	
 		customer_name = self.create_customer(order)
 
 		self.create_address(order, customer_name)
 
 		order_id = order.get("AmazonOrderId")
 		
-		f.write(order_id)
-		f.write("\n")
-		f.close()
-		
-		
+	
 		sales_order = frappe.db.get_value(
 			"Sales Order", filters={"amazon_order_id": order_id}, fieldname="name"
 		)
 
 		if sales_order:
 			sales_order = frappe.get_last_doc('Sales Order', filters={"amazon_order_id": order_id})
-			if sales_order.delivery_status == "Fully Delivered":
+			if sales_order.delivery_status == "Fully Delivered" and sales_order.billing_status == "Fully Billed":
 				return sales_order.name
 
 			order_status = order.get("OrderStatus")
@@ -326,26 +322,26 @@ class AmazonRepository:
 				sales_order.delivery_status =  "Not Delivered"
 
 			if order_status == 'Shipped':
+				sales_order.delivery_status =  "Fully Delivered"
+				sales_order.per_delivered = "100"
+				sales_order.per_picked = "100"
 				taxes_and_charges = self.amz_setting.taxes_charges
-
-				if taxes_and_charges:
+				charges = len(charges_and_fees.get("charges"))
+				feeses = len(charges_and_fees.get("fees"))
+				if charges or feeses:
 					charges_and_fees = self.get_charges_and_fees(order_id)
 					for charge in charges_and_fees.get("charges"):
 						sales_order.append("taxes", charge)
 					for fee in charges_and_fees.get("fees"):
 						sales_order.append("taxes", fee)
-				sales_order.billing_status = "Fully Billed"
-				sales_order.delivery_status =  "Fully Delivered"
-				sales_order.per_billed = "100"
-				sales_order.per_delivered = "100"
-				sales_order.per_picked = "100"
+					sales_order.billing_status = "Fully Billed"
+					sales_order.per_billed = "100"
 			
 			sales_order.save()
 
-			if order_status == 'Shipped':
+			if sales_order.billing_status == "Fully Billed":
 				sales_order.submit()
 			
-			frappe.db.commit()
 			
 			return sales_order.name
 		else:
@@ -393,27 +389,29 @@ class AmazonRepository:
 				sales_order.delivery_status =  "Not Delivered"
 
 			if order_status == 'Shipped':
+				sales_order.delivery_status =  "Fully Delivered"
+				sales_order.per_delivered = "100"
+				sales_order.per_picked = "100"
 				taxes_and_charges = self.amz_setting.taxes_charges
-
-				if taxes_and_charges:
+				charges = len(charges_and_fees.get("charges"))
+				feeses = len(charges_and_fees.get("fees"))
+				if charges or feeses:
 					charges_and_fees = self.get_charges_and_fees(order_id)
 					for charge in charges_and_fees.get("charges"):
 						sales_order.append("taxes", charge)
 					for fee in charges_and_fees.get("fees"):
 						sales_order.append("taxes", fee)
-				sales_order.billing_status = "Fully Billed"
-				sales_order.delivery_status =  "Fully Delivered"
-				sales_order.per_billed = "100"
-				sales_order.per_delivered = "100"
-				sales_order.per_picked = "100"
+					sales_order.billing_status = "Fully Billed"
+					sales_order.per_billed = "100"
 			
 			sales_order.insert()
 			sales_order.save()
 
-			if order_status == 'Shipped':
+			if sales_order.billing_status == "Fully Billed":
 				sales_order.submit()
-
-			frappe.db.commit()
+			
+			
+			sales_order.save()
 			
 			return sales_order.name
 
