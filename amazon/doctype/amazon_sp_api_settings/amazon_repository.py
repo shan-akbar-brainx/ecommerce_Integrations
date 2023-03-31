@@ -345,7 +345,7 @@ class AmazonRepository:
 			if sales_order.billing_status == "Fully Billed":
 				sales_order.submit()
 			
-			# frappe.db.commit()
+			frappe.db.commit()
 			return sales_order.name
 		else:
 			items = self.get_order_items(order_id)
@@ -411,14 +411,13 @@ class AmazonRepository:
 			
 			sales_order.insert()
 			sales_order.save()
-			# frappe.db.commit()
+			
 
 			if sales_order.billing_status == "Fully Billed":
 				sales_order.submit()
 			
-			
-			sales_order.save()
-			
+			frappe.db.commit()
+
 			return sales_order.name
 
 	def get_orders(self, last_updated_after, last_updated_before):
