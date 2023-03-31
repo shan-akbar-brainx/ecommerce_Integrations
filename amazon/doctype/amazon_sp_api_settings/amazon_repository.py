@@ -326,23 +326,26 @@ class AmazonRepository:
 				sales_order.per_delivered = "100"
 				sales_order.per_picked = "100"
 				taxes_and_charges = self.amz_setting.taxes_charges
-				charges = len(charges_and_fees.get("charges"))
-				feeses = len(charges_and_fees.get("fees"))
-				if charges or feeses:
+				
+				if taxes_and_charges:
 					charges_and_fees = self.get_charges_and_fees(order_id)
-					for charge in charges_and_fees.get("charges"):
-						sales_order.append("taxes", charge)
-					for fee in charges_and_fees.get("fees"):
-						sales_order.append("taxes", fee)
-					sales_order.billing_status = "Fully Billed"
-					sales_order.per_billed = "100"
+					charges = len(charges_and_fees.get("charges"))
+					feeses = len(charges_and_fees.get("fees"))
+					if charges or feeses:
+					
+						for charge in charges_and_fees.get("charges"):
+							sales_order.append("taxes", charge)
+						for fee in charges_and_fees.get("fees"):
+							sales_order.append("taxes", fee)
+							sales_order.billing_status = "Fully Billed"
+							sales_order.per_billed = "100"
 			
 			sales_order.save()
 
 			if sales_order.billing_status == "Fully Billed":
 				sales_order.submit()
 			
-			
+			# frappe.db.commit()
 			return sales_order.name
 		else:
 			items = self.get_order_items(order_id)
@@ -393,19 +396,22 @@ class AmazonRepository:
 				sales_order.per_delivered = "100"
 				sales_order.per_picked = "100"
 				taxes_and_charges = self.amz_setting.taxes_charges
-				charges = len(charges_and_fees.get("charges"))
-				feeses = len(charges_and_fees.get("fees"))
-				if charges or feeses:
+				if taxes_and_charges:
 					charges_and_fees = self.get_charges_and_fees(order_id)
-					for charge in charges_and_fees.get("charges"):
-						sales_order.append("taxes", charge)
-					for fee in charges_and_fees.get("fees"):
-						sales_order.append("taxes", fee)
-					sales_order.billing_status = "Fully Billed"
-					sales_order.per_billed = "100"
+					charges = len(charges_and_fees.get("charges"))
+					feeses = len(charges_and_fees.get("fees"))
+					if charges or feeses:
+					
+						for charge in charges_and_fees.get("charges"):
+							sales_order.append("taxes", charge)
+						for fee in charges_and_fees.get("fees"):
+							sales_order.append("taxes", fee)
+							sales_order.billing_status = "Fully Billed"
+							sales_order.per_billed = "100"
 			
 			sales_order.insert()
 			sales_order.save()
+			# frappe.db.commit()
 
 			if sales_order.billing_status == "Fully Billed":
 				sales_order.submit()
