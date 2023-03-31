@@ -282,8 +282,6 @@ class AmazonRepository:
 		return final_order_items
 
 	def create_sales_order(self, order):
-		f = open('logs-orders.txt', "a")
-		
 		
 		customer_name = self.create_customer(order)
 
@@ -291,8 +289,7 @@ class AmazonRepository:
 
 		order_id = order.get("AmazonOrderId")
 		
-		f.write(order_id)
-		f.write("\n")
+		
 		
 		
 		sales_order = frappe.db.get_value(
@@ -305,7 +302,7 @@ class AmazonRepository:
 				return sales_order.name
 
 			order_status = order.get("OrderStatus")
-			f.write(order_status)
+
 			if order_status == 'Unshipped':
 				sales_order.billing_status = "Not Billed"
 				sales_order.delivery_status =  "Not Delivered"
@@ -372,7 +369,7 @@ class AmazonRepository:
 
 			
 			order_status = order.get("OrderStatus")
-			f.write(order_status)
+			
 			if order_status == 'Unshipped':
 				sales_order.billing_status = "Not Billed"
 				sales_order.delivery_status =  "Not Delivered"
@@ -414,10 +411,9 @@ class AmazonRepository:
 			if order_status == 'Shipped':
 				sales_order.submit()
 
-			f.close()
 			return sales_order.name
 
-	def get_orders(self, last_updated_after):
+	def get_orders(self, last_updated_after, last_updated_before):
 		orders = self.get_orders_instance()
 		order_statuses = [
 			"PendingAvailability",
@@ -433,6 +429,7 @@ class AmazonRepository:
 		orders_payload = self.call_sp_api_method(
 			sp_api_method=orders.get_orders,
 			last_updated_after=last_updated_after,
+			last_updated_before=last_updated_before,
 			order_statuses=order_statuses,
 			fulfillment_channels=fulfillment_channels,
 			max_results=50,
@@ -458,7 +455,7 @@ class AmazonRepository:
 				break
 
 			orders_payload = self.call_sp_api_method(
-				sp_api_method=orders.get_orders, last_updated_after=last_updated_after, next_token=next_token
+				sp_api_method=orders.get_orders, last_updated_after=last_updated_after, last_updated_before=last_updated_before, next_token=next_token
 			)
 			
 		return sales_orders
@@ -662,9 +659,9 @@ def validate_amazon_sp_api_credentials(**args):
 		frappe.throw(msg)
 
 
-def get_orders(amz_setting_name, last_updated_after):
+def get_orders(amz_setting_name, last_updated_after, last_updated_before):
 	amazon_repository = AmazonRepository(amz_setting_name)
-	return amazon_repository.get_orders(last_updated_after)
+	return amazon_repository.get_orders(last_updated_after, last_updated_before)
 
 
 def get_products_details(amz_setting_name):
