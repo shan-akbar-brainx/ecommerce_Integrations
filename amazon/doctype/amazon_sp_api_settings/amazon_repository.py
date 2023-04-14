@@ -280,7 +280,7 @@ class AmazonRepository:
 				)
 
 		return final_order_items
-
+	
 	def create_sales_order(self, order):
 	
 		customer_name = self.create_customer(order)
@@ -296,6 +296,7 @@ class AmazonRepository:
 
 		if sales_order:
 			sales_order = frappe.get_last_doc('Sales Order', filters={"amazon_order_id": order_id})
+			
 			if sales_order.delivery_status == "Fully Delivered" and sales_order.billing_status == "Fully Billed":
 				return sales_order.name
 
@@ -315,7 +316,7 @@ class AmazonRepository:
 
 			if order_status == 'InvoiceUnconfirmed':
 				sales_order.billing_status = "Not Billed"
-				sales_order.delivery_status =  "Not Delivered"
+				sales_order.delivery_status =  "Fully Delivered"
 			
 			if order_status == 'Unfulfillable':
 				sales_order.billing_status = "Not Billed"
@@ -325,25 +326,27 @@ class AmazonRepository:
 				sales_order.delivery_status =  "Fully Delivered"
 				sales_order.per_delivered = "100"
 				sales_order.per_picked = "100"
-				taxes_and_charges = self.amz_setting.taxes_charges
-				
-				if taxes_and_charges:
-					charges_and_fees = self.get_charges_and_fees(order_id)
-					charges = len(charges_and_fees.get("charges"))
-					feeses = len(charges_and_fees.get("fees"))
-					if charges or feeses:
-					
-						for charge in charges_and_fees.get("charges"):
-							sales_order.append("taxes", charge)
-						for fee in charges_and_fees.get("fees"):
-							sales_order.append("taxes", fee)
-							sales_order.billing_status = "Fully Billed"
-							sales_order.per_billed = "100"
+				sales_order.billing_status = "Fully Billed"
+				sales_order.per_billed = "100"
 			
 			sales_order.save()
-
+			
 			if sales_order.billing_status == "Fully Billed":
+				sales_order_invoice = frappe.get_doc(
+					{
+						"doctype": "Sales Invoice",
+						"naming_series": "ACC-SINV-RET-.YYYY.-",
+						"set_posting_time": True,
+						"posting_date": sales_order.transaction_date,
+						"customer": customer_name,
+						"due_date": sales_order.delivery_date,
+						"items": sales_order.items
+					}
+				)
 				sales_order.submit()
+				sales_order_invoice.insert()
+				sales_order_invoice.save()
+				sales_order_invoice.submit()
 			
 			frappe.db.commit()
 			return sales_order.name
@@ -367,7 +370,6 @@ class AmazonRepository:
 					"company": self.amz_setting.company
 				}
 			)
-
 			
 			order_status = order.get("OrderStatus")
 			
@@ -385,7 +387,7 @@ class AmazonRepository:
 
 			if order_status == 'InvoiceUnconfirmed':
 				sales_order.billing_status = "Not Billed"
-				sales_order.delivery_status =  "Not Delivered"
+				sales_order.delivery_status =  "Fully Delivered"
 			
 			if order_status == 'Unfulfillable':
 				sales_order.billing_status = "Not Billed"
@@ -395,26 +397,30 @@ class AmazonRepository:
 				sales_order.delivery_status =  "Fully Delivered"
 				sales_order.per_delivered = "100"
 				sales_order.per_picked = "100"
-				taxes_and_charges = self.amz_setting.taxes_charges
-				if taxes_and_charges:
-					charges_and_fees = self.get_charges_and_fees(order_id)
-					charges = len(charges_and_fees.get("charges"))
-					feeses = len(charges_and_fees.get("fees"))
-					if charges or feeses:
-					
-						for charge in charges_and_fees.get("charges"):
-							sales_order.append("taxes", charge)
-						for fee in charges_and_fees.get("fees"):
-							sales_order.append("taxes", fee)
-							sales_order.billing_status = "Fully Billed"
-							sales_order.per_billed = "100"
-			
+				sales_order.billing_status = "Fully Billed"
+				sales_order.per_billed = "100"
+				
 			sales_order.insert()
 			sales_order.save()
 			
 
 			if sales_order.billing_status == "Fully Billed":
+				sales_order_invoice = frappe.get_doc(
+					{
+						"doctype": "Sales Invoice",
+						"naming_series": "ACC-SINV-RET-.YYYY.-",
+						"set_posting_time": True,
+						"posting_date": transaction_date,
+						"customer": customer_name,
+						"due_date": delivery_date,
+						"items": items
+					}
+				)
+
 				sales_order.submit()
+				sales_order_invoice.insert()
+				sales_order_invoice.save()
+				sales_order_invoice.submit()
 			
 			frappe.db.commit()
 
