@@ -430,7 +430,7 @@ class AmazonRepository:
 			sales_order_invoice.save()
 			sales_order.insert()
 			sales_order.save()
-			
+			frappe.db.commit()
 
 			if sales_order.billing_status == "Fully Billed":
 				sales_order.submit()
