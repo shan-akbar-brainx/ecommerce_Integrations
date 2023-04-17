@@ -307,6 +307,9 @@ class AmazonRepository:
 						"items": sales_order.items
 					}
 				)
+				for item in sales_order_invoice.items:
+					if not item.income_account:
+						item.income_account = "431212 - Amazon US Promotional discount for an order item - CML"
 				sales_order_invoice.insert()
 				sales_order_invoice.save()
 			else:
@@ -366,9 +369,7 @@ class AmazonRepository:
 			return sales_order.name
 		else:
 			items = self.get_order_items(order_id)
-			for item in items:
-				if not item.income_account:
-					item.income_account = "431212 - Amazon US Promotional discount for an order item - CML"
+			
 			if(len(items) == 0):
 				return "Order has no items"
 			delivery_date = dateutil.parser.parse(order.get("LatestShipDate")).strftime("%Y-%m-%d")
@@ -443,6 +444,9 @@ class AmazonRepository:
 			
 			sales_order.insert()
 			sales_order.save()
+			for item in sales_order_invoice.items:
+				if not item.income_account:
+					item.income_account = "431212 - Amazon US Promotional discount for an order item - CML"
 			sales_order_invoice.insert()
 			sales_order_invoice.save()
 			frappe.db.commit()
