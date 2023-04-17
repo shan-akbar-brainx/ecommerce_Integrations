@@ -327,17 +327,23 @@ class AmazonRepository:
 					if charges or feeses:
 						sales_order.billing_status = "Fully Billed"
 						sales_order.per_billed = "100"
-						sales_order_invoice = frappe.get_doc(
-							{
-								"doctype": "Sales Invoice",
-								"naming_series": "ACC-SINV-RET-.YYYY.-",
-								"set_posting_time": True,
-								"posting_date": sales_order.transaction_date,
-								"customer": customer_name,
-								"due_date": sales_order.delivery_date,
-								"items": sales_order.items
-							}
+						sales_order_invoice = frappe.db.get_value(
+							"Sales Invoice", filters={"customer": customer_name}, fieldname="name"
 						)
+						if sales_order_invoice:
+							sales_order_invoice = frappe.get_last_doc('Sales Invoice', filters={"customer": customer_name})
+						else:
+							sales_order_invoice = frappe.get_doc(
+								{
+									"doctype": "Sales Invoice",
+									"naming_series": "ACC-SINV-RET-.YYYY.-",
+									"set_posting_time": True,
+									"posting_date": sales_order.transaction_date,
+									"customer": customer_name,
+									"due_date": sales_order.delivery_date,
+									"items": sales_order.items
+								}
+							)
 					
 						for charge in charges_and_fees.get("charges"):
 							sales_order_invoice.append("taxes", charge)
