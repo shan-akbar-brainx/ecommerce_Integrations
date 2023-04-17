@@ -331,7 +331,8 @@ class AmazonRepository:
 							"Sales Invoice", filters={"customer": customer_name}, fieldname="name"
 						)
 						if sales_order_invoice:
-							sales_order_invoice = frappe.get_last_doc('Sales Invoice', filters={"customer": customer_name})
+							# sales_order_invoice = frappe.get_last_doc('Sales Invoice', filters={"customer": customer_name})
+							return sales_order_invoice
 						else:
 							sales_order_invoice = frappe.get_doc(
 								{
