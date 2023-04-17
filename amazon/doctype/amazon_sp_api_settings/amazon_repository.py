@@ -297,14 +297,16 @@ class AmazonRepository:
 
 			if not sales_order_invoice:
 				items = self.get_order_items(order_id)
+				delivery_date = dateutil.parser.parse(order.get("LatestShipDate")).strftime("%Y-%m-%d")
+				transaction_date = dateutil.parser.parse(order.get("PurchaseDate")).strftime("%Y-%m-%d")
 				sales_order_invoice = frappe.get_doc(
 					{
 						"doctype": "Sales Invoice",
 						"naming_series": "ACC-SINV-RET-.YYYY.-",
 						"set_posting_time": True,
-						"posting_date": sales_order.transaction_date,
+						"posting_date": transaction_date,
 						"customer": customer_name,
-						"due_date": sales_order.delivery_date,
+						"due_date": delivery_date,
 						"items": items
 					}
 				)
