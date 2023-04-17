@@ -288,6 +288,9 @@ class AmazonRepository:
 		if sales_order:
 			sales_order = frappe.get_last_doc('Sales Order', filters={"amazon_order_id": order_id})
 			
+			if sales_order.delivery_status == "Fully Delivered" and sales_order.billing_status == "Fully Billed":
+				return sales_order.name
+
 			sales_order_invoice = frappe.db.get_value(
 				"Sales Invoice", filters={"customer": customer_name}, fieldname="name"
 			)
@@ -305,13 +308,10 @@ class AmazonRepository:
 					}
 				)
 				print(order_id)
-				sales_order_invoice.insert(ignore_permissions=True)
+				sales_order_invoice.insert()
 				sales_order_invoice.save()
 			else:
 				sales_order_invoice = frappe.get_last_doc('Sales Invoice', filters={"customer": customer_name})
-
-			if sales_order.delivery_status == "Fully Delivered" and sales_order.billing_status == "Fully Billed":
-				return sales_order.name
 
 			order_status = order.get("OrderStatus")
 
