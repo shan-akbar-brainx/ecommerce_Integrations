@@ -305,17 +305,18 @@ class AmazonRepository:
 						"posting_date": sales_order.transaction_date,
 						"customer": customer_name,
 						"due_date": sales_order.delivery_date,
-						"items": items,
-						"cost_center": "Amazon - US - CML"
+						"items": items
 					}
 				)
+				sales_order_invoice.cost_center = "Amazon-US-CML"
 				for item in sales_order_invoice.items:
 					if not item.income_account:
-						item.income_account = "431212 - Amazon US Promotional discount for an order item - CML"
+						item.income_account = "431110-Amazon US Selling price (Principal)-CML"
 				sales_order_invoice.insert()
 				sales_order_invoice.save()
 			else:
 				sales_order_invoice = frappe.get_last_doc('Sales Invoice', filters={"customer": customer_name})
+				sales_order_invoice.cost_center = "Amazon-US-CML"
 
 			order_status = order.get("OrderStatus")
 
@@ -399,10 +400,11 @@ class AmazonRepository:
 					"posting_date": transaction_date,
 					"customer": customer_name,
 					"due_date": delivery_date,
-					"items": items,
-					"cost_center": "Amazon - US - CML"
+					"items": items
 				}
 			)
+
+			sales_order_invoice.cost_center = "Amazon-US-CML"
 			
 			order_status = order.get("OrderStatus")
 			
@@ -449,7 +451,7 @@ class AmazonRepository:
 			sales_order.save()
 			for item in sales_order_invoice.items:
 				if not item.income_account:
-					item.income_account = "431212 - Amazon US Promotional discount for an order item - CML"
+					item.income_account = "431110-Amazon US Selling price (Principal)-CML"
 			sales_order_invoice.insert()
 			sales_order_invoice.save()
 			frappe.db.commit()
