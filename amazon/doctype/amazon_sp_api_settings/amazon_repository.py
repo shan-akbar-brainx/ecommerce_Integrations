@@ -426,10 +426,12 @@ class AmazonRepository:
 						sales_order.billing_status = "Fully Billed"
 						sales_order.per_billed = "100"
 			print(order_id)
-			sales_order_invoice.insert()
-			sales_order_invoice.save()
+			for item in sales_order_invoice.items:
+				print(item.income_account)
 			sales_order.insert()
 			sales_order.save()
+			sales_order_invoice.insert()
+			sales_order_invoice.save()
 			frappe.db.commit()
 
 			if sales_order.billing_status == "Fully Billed":
