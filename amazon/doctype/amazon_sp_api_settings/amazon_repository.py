@@ -308,10 +308,10 @@ class AmazonRepository:
 						"items": items
 					}
 				)
-				sales_order_invoice.cost_center = "Amazon-US-CML"
+				sales_order_invoice.cost_center = "Amazon - US - CML"
 				for item in sales_order_invoice.items:
 					if not item.income_account:
-						item.income_account = "431110-Amazon US Selling price (Principal)-CML"
+						item.income_account = "431110 - Amazon US Selling price (Principal) - CML"
 				sales_order_invoice.insert()
 				sales_order_invoice.save()
 			else:
@@ -404,7 +404,7 @@ class AmazonRepository:
 				}
 			)
 
-			sales_order_invoice.cost_center = "Amazon-US-CML"
+			sales_order_invoice.cost_center = "Amazon - US - CML"
 			
 			order_status = order.get("OrderStatus")
 			
@@ -451,7 +451,7 @@ class AmazonRepository:
 			sales_order.save()
 			for item in sales_order_invoice.items:
 				if not item.income_account:
-					item.income_account = "431110-Amazon US Selling price (Principal)-CML"
+					item.income_account = "431110 - Amazon US Selling price (Principal) - CML"
 			sales_order_invoice.insert()
 			sales_order_invoice.save()
 			frappe.db.commit()
