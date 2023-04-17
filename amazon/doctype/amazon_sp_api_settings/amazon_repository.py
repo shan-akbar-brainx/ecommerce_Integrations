@@ -320,7 +320,7 @@ class AmazonRepository:
 				sales_order_invoice.save()
 			else:
 				sales_order_invoice = frappe.get_last_doc('Sales Invoice', filters={"customer": customer_name})
-				sales_order_invoice.cost_center = "Amazon-US-CML"
+				sales_order_invoice.cost_center = "Amazon - US - CML"
 
 			order_status = order.get("OrderStatus")
 
