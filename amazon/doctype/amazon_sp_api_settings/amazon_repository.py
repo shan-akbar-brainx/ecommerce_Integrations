@@ -307,9 +307,10 @@ class AmazonRepository:
 						"items": sales_order.items
 					}
 				)
-				print(order_id)
-				sales_order_invoice.insert()
+
 				sales_order_invoice.save()
+				sales_order_invoice.insert()
+				
 			else:
 				sales_order_invoice = frappe.get_last_doc('Sales Invoice', filters={"customer": customer_name})
 
