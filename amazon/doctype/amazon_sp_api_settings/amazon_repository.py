@@ -116,6 +116,7 @@ class AmazonRepository:
 										"account_head": charge_account,
 										"tax_amount": amount,
 										"description": charge_type + " for " + seller_sku,
+										"cost_center": "Amazon - US - CML"
 									}
 								)
 
@@ -132,6 +133,7 @@ class AmazonRepository:
 										"account_head": fee_account,
 										"tax_amount": amount,
 										"description": fee_type + " for " + seller_sku,
+										"cost_center": "Amazon - US - CML"
 									}
 								)
 
