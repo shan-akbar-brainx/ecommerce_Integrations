@@ -354,6 +354,9 @@ class AmazonRepository:
 			return sales_order.name
 		else:
 			items = self.get_order_items(order_id)
+			for item in items:
+				if not item.income_account:
+					item.income_account = "431212 - Amazon US Promotional discount for an order item - CML"
 			if(len(items) == 0):
 				return "Order has no items"
 			delivery_date = dateutil.parser.parse(order.get("LatestShipDate")).strftime("%Y-%m-%d")
@@ -425,9 +428,7 @@ class AmazonRepository:
 						sales_order_invoice.status = "Paid"
 						sales_order.billing_status = "Fully Billed"
 						sales_order.per_billed = "100"
-			print(order_id)
-			for item in sales_order_invoice.items:
-				print(item.income_account)
+			
 			sales_order.insert()
 			sales_order.save()
 			sales_order_invoice.insert()
