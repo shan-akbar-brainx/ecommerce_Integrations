@@ -296,7 +296,19 @@ class AmazonRepository:
 			)
 
 			if not sales_order_invoice:
-				return sales_order.name
+				sales_order_invoice = frappe.get_doc(
+					{
+						"doctype": "Sales Invoice",
+						"naming_series": "ACC-SINV-RET-.YYYY.-",
+						"set_posting_time": True,
+						"posting_date": sales_order.transaction_date,
+						"customer": customer_name,
+						"due_date": sales_order.delivery_date,
+						"items": sales_order.items
+					}
+				)
+				sales_order_invoice.insert()
+				sales_order_invoice.save()
 			else:
 				sales_order_invoice = frappe.get_last_doc('Sales Invoice', filters={"customer": customer_name})
 
