@@ -305,7 +305,8 @@ class AmazonRepository:
 						"posting_date": sales_order.transaction_date,
 						"customer": customer_name,
 						"due_date": sales_order.delivery_date,
-						"items": items
+						"items": items,
+						"cost_center": "Amazon - US - CML"
 					}
 				)
 				for item in sales_order_invoice.items:
@@ -398,7 +399,8 @@ class AmazonRepository:
 					"posting_date": transaction_date,
 					"customer": customer_name,
 					"due_date": delivery_date,
-					"items": items
+					"items": items,
+					"cost_center": "Amazon - US - CML"
 				}
 			)
 			
