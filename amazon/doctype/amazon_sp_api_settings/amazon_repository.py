@@ -346,14 +346,14 @@ class AmazonRepository:
 								}
 							)
 					
-						for charge in charges_and_fees.get("charges"):
-							sales_order_invoice.append("taxes", charge)
-						for fee in charges_and_fees.get("fees"):
-							sales_order_invoice.append("taxes", fee)
+							for charge in charges_and_fees.get("charges"):
+								sales_order_invoice.append("taxes", charge)
+							for fee in charges_and_fees.get("fees"):
+								sales_order_invoice.append("taxes", fee)
 
-						sales_order_invoice.insert()
-						sales_order_invoice.save()
-						sales_order_invoice.submit()
+							sales_order_invoice.insert()
+							sales_order_invoice.save()
+							sales_order_invoice.submit()
 	
 			sales_order.save()
 			
