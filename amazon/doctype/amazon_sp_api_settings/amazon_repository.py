@@ -291,7 +291,6 @@ class AmazonRepository:
 			if sales_order.delivery_status == "Fully Delivered" and sales_order.billing_status == "Fully Billed":
 				return sales_order.name
 			
-			sales_order_invoice = None
 
 			order_status = order.get("OrderStatus")
 
@@ -347,13 +346,14 @@ class AmazonRepository:
 
 						sales_order_invoice.insert()
 						sales_order_invoice.save()
+						sales_order_invoice.submit()
 	
 			sales_order.save()
 			
 			if sales_order.billing_status == "Fully Billed":
 				
 				sales_order.submit()
-				sales_order_invoice.submit()
+				
 			
 			return sales_order.name
 		else:
@@ -379,7 +379,6 @@ class AmazonRepository:
 			
 			order_status = order.get("OrderStatus")
 			
-			sales_order_invoice = None
 
 			if order_status == 'Unshipped':
 				sales_order.billing_status = "Not Billed"
@@ -433,6 +432,7 @@ class AmazonRepository:
 
 						sales_order_invoice.insert()
 						sales_order_invoice.save()
+						sales_order_invoice.submit()
 			
 			sales_order.insert()
 			sales_order.save()
@@ -440,7 +440,7 @@ class AmazonRepository:
 
 			if sales_order.billing_status == "Fully Billed":
 				sales_order.submit()
-				sales_order_invoice.submit()
+				
 
 			return sales_order.name
 
