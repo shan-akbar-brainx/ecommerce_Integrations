@@ -79,16 +79,12 @@ class AmazonRepository:
 		return account_name
 
 	def get_charges_and_fees(self, order_id):
-		f = open('logs.txt', "a")
+		
 		finances = self.get_finances_instance()
 		financial_events_payload = self.call_sp_api_method(
 			sp_api_method=finances.list_financial_events_by_order_id, order_id=order_id
 		)
 
-		converted = dumps(order_id)
-		f.write(converted)
-		f.write("\n")
-		
 		charges_and_fees = {"charges": [], "fees": []}
 		
 		while True:
@@ -147,11 +143,6 @@ class AmazonRepository:
 				order_id=order_id,
 				next_token=next_token,
 			)
-		
-		converted = dumps(charges_and_fees)
-		f.write(converted)
-		f.write("\n")
-		f.close()
 		
 		return charges_and_fees
 
