@@ -296,6 +296,7 @@ class AmazonRepository:
 			)
 
 			if not sales_order_invoice:
+				items = self.get_order_items(order_id)
 				sales_order_invoice = frappe.get_doc(
 					{
 						"doctype": "Sales Invoice",
@@ -304,7 +305,7 @@ class AmazonRepository:
 						"posting_date": sales_order.transaction_date,
 						"customer": customer_name,
 						"due_date": sales_order.delivery_date,
-						"items": sales_order.items
+						"items": items
 					}
 				)
 				for item in sales_order_invoice.items:
