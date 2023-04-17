@@ -425,7 +425,7 @@ class AmazonRepository:
 						sales_order_invoice.status = "Paid"
 						sales_order.billing_status = "Fully Billed"
 						sales_order.per_billed = "100"
-			
+			print(order_id)
 			sales_order_invoice.insert()
 			sales_order_invoice.save()
 			sales_order.insert()
