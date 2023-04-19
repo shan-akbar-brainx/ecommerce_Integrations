@@ -628,6 +628,23 @@ class AmazonRepository:
 
 		return products
 
+	def get_settlement_details(self):
+		today_date  = datetime.datetime.today()
+		old_date = (today_date - timedelta(days=15))
+		
+		old_date = old_date.astimezone(timezone('US/Pacific'))
+		today_date = today_date.astimezone(timezone('US/Pacific'))
+		old_date = old_date.isoformat()
+		today_date = today_date.isoformat()
+		print(old_date)
+		print(today_date)
+		report_id = self.create_report("GET_V2_SETTLEMENT_REPORT_DATA_FLAT_FILE", old_date, today_date)
+		if report_id:
+			report_document = self.get_report_document(report_id)
+
+			if report_document:
+				print(report_document)
+
 	# Related to Reports
 	def get_reports_instance(self):
 		return sp_api.Reports(**self.instance_params)
