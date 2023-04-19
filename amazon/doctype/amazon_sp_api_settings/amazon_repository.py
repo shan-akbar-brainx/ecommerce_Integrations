@@ -116,6 +116,7 @@ class AmazonRepository:
 										"account_head": charge_account,
 										"tax_amount": amount,
 										"description": charge_type + " for " + seller_sku,
+										"cost_center": "Amazon - US - CML"
 									}
 								)
 
@@ -132,6 +133,7 @@ class AmazonRepository:
 										"account_head": fee_account,
 										"tax_amount": amount,
 										"description": fee_type + " for " + seller_sku,
+										"cost_center": "Amazon - US - CML"
 									}
 								)
 
@@ -143,7 +145,7 @@ class AmazonRepository:
 				order_id=order_id,
 				next_token=next_token,
 			)
-		
+
 		return charges_and_fees
 
 	# Orders Section
@@ -290,10 +292,38 @@ class AmazonRepository:
 			
 			if sales_order.delivery_status == "Fully Delivered" and sales_order.billing_status == "Fully Billed":
 				return sales_order.name
-			
-			sales_order_invoice = None
+
+			sales_order_invoice = frappe.db.get_value(
+				"Sales Invoice", filters={"customer": customer_name}, fieldname="name"
+			)
+
+			if not sales_order_invoice:
+				items = self.get_order_items(order_id)
+				delivery_date = dateutil.parser.parse(order.get("LatestShipDate")).strftime("%Y-%m-%d")
+				transaction_date = dateutil.parser.parse(order.get("PurchaseDate")).strftime("%Y-%m-%d")
+				sales_order_invoice = frappe.get_doc(
+					{
+						"doctype": "Sales Invoice",
+						"naming_series": "ACC-SINV-RET-.YYYY.-",
+						"set_posting_time": True,
+						"posting_date": transaction_date,
+						"customer": customer_name,
+						"due_date": delivery_date,
+						"items": items
+					}
+				)
+				sales_order_invoice.cost_center = "Amazon - US - CML"
+				for item in sales_order_invoice.items:
+					if not item.income_account:
+						item.income_account = "431110 - Amazon US Selling price (Principal) - CML"
+				sales_order_invoice.insert()
+				sales_order_invoice.save()
+			else:
+				sales_order_invoice = frappe.get_last_doc('Sales Invoice', filters={"customer": customer_name})
+				sales_order_invoice.cost_center = "Amazon - US - CML"
 
 			order_status = order.get("OrderStatus")
+
 
 			if order_status == 'Unshipped':
 				sales_order.billing_status = "Not Billed"
@@ -326,38 +356,27 @@ class AmazonRepository:
 					charges = len(charges_and_fees.get("charges"))
 					feeses = len(charges_and_fees.get("fees"))
 					if charges or feeses:
-						sales_order.billing_status = "Fully Billed"
-						sales_order.per_billed = "100"
-						sales_order_invoice = frappe.get_doc(
-							{
-								"doctype": "Sales Invoice",
-								"naming_series": "ACC-SINV-RET-.YYYY.-",
-								"set_posting_time": True,
-								"posting_date": sales_order.transaction_date,
-								"customer": customer_name,
-								"due_date": sales_order.delivery_date,
-								"items": sales_order.items
-							}
-						)
 					
 						for charge in charges_and_fees.get("charges"):
 							sales_order_invoice.append("taxes", charge)
 						for fee in charges_and_fees.get("fees"):
 							sales_order_invoice.append("taxes", fee)
-
-						sales_order_invoice.insert()
-						sales_order_invoice.save()
-	
-			sales_order.save()
+						sales_order_invoice.status = "Paid"
+						sales_order.billing_status = "Fully Billed"
+						sales_order.per_billed = "100"
 			
+			sales_order.save()
+			sales_order_invoice.save()
+
 			if sales_order.billing_status == "Fully Billed":
-				
 				sales_order.submit()
 				sales_order_invoice.submit()
+			
 			
 			return sales_order.name
 		else:
 			items = self.get_order_items(order_id)
+			
 			if(len(items) == 0):
 				return "Order has no items"
 			delivery_date = dateutil.parser.parse(order.get("LatestShipDate")).strftime("%Y-%m-%d")
@@ -376,11 +395,23 @@ class AmazonRepository:
 					"company": self.amz_setting.company
 				}
 			)
+
+			sales_order_invoice = frappe.get_doc(
+				{
+					"doctype": "Sales Invoice",
+					"naming_series": "ACC-SINV-RET-.YYYY.-",
+					"set_posting_time": True,
+					"posting_date": transaction_date,
+					"customer": customer_name,
+					"due_date": delivery_date,
+					"items": items
+				}
+			)
+
+			sales_order_invoice.cost_center = "Amazon - US - CML"
 			
 			order_status = order.get("OrderStatus")
 			
-			sales_order_invoice = None
-
 			if order_status == 'Unshipped':
 				sales_order.billing_status = "Not Billed"
 				sales_order.delivery_status =  "Not Delivered"
@@ -406,42 +437,33 @@ class AmazonRepository:
 				sales_order.per_delivered = "100"
 				sales_order.per_picked = "100"
 				taxes_and_charges = self.amz_setting.taxes_charges
-				
 				if taxes_and_charges:
 					charges_and_fees = self.get_charges_and_fees(order_id)
 					charges = len(charges_and_fees.get("charges"))
 					feeses = len(charges_and_fees.get("fees"))
 					if charges or feeses:
-						sales_order.billing_status = "Fully Billed"
-						sales_order.per_billed = "100"
-						sales_order_invoice = frappe.get_doc(
-							{
-								"doctype": "Sales Invoice",
-								"naming_series": "ACC-SINV-RET-.YYYY.-",
-								"set_posting_time": True,
-								"posting_date": transaction_date,
-								"customer": customer_name,
-								"due_date": delivery_date,
-								"items": items
-							}
-						)
 					
 						for charge in charges_and_fees.get("charges"):
 							sales_order_invoice.append("taxes", charge)
 						for fee in charges_and_fees.get("fees"):
 							sales_order_invoice.append("taxes", fee)
-
-						sales_order_invoice.insert()
-						sales_order_invoice.save()
+						sales_order_invoice.status = "Paid"
+						sales_order.billing_status = "Fully Billed"
+						sales_order.per_billed = "100"
 			
 			sales_order.insert()
 			sales_order.save()
-			
+			for item in sales_order_invoice.items:
+				if not item.income_account:
+					item.income_account = "431110 - Amazon US Selling price (Principal) - CML"
+			sales_order_invoice.insert()
+			sales_order_invoice.save()
+			frappe.db.commit()
 
 			if sales_order.billing_status == "Fully Billed":
 				sales_order.submit()
 				sales_order_invoice.submit()
-
+			
 			return sales_order.name
 
 	def get_orders(self, last_updated_after, last_updated_before):
