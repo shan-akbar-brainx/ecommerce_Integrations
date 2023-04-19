@@ -633,7 +633,15 @@ class AmazonRepository:
 		response = reports.request_reports(
 			report_types=['GET_V2_SETTLEMENT_REPORT_DATA_FLAT_FILE'], created_since=old_date, created_until=today_date
 		)
+		reportDocuments = {}
 		print(response)
+		reports = response.get("reports")
+		for report in reports:
+			reportId = report.get("reportId")
+			# reportDocuments[reportId] = self.get_settlement_report_document(response=report)
+
+		print(reportDocuments)
+
 
 	# Related to Reports
 	def get_reports_instance(self):
@@ -694,6 +702,48 @@ class AmazonRepository:
 					raise (KeyError("url"))
 				raise (KeyError("reportDocumentId"))
 
+	def get_settlement_report_document(self, response):
+		reports = self.get_reports_instance()
+
+		for x in range(3):
+			processingStatus = response.get("processingStatus")
+
+			if not processingStatus:
+				raise (KeyError("processingStatus"))
+			elif processingStatus in ["IN_PROGRESS", "IN_QUEUE"]:
+				time.sleep(15)
+				continue
+			elif processingStatus in ["CANCELLED", "FATAL"]:
+				raise (f"Report Processing Status: {processingStatus}")
+			elif processingStatus == "DONE":
+				report_document_id = response.get("reportDocumentId")
+
+				if report_document_id:
+					response = reports.get_report_document(report_document_id)
+					url = response.get("url")
+
+					if url:
+						rows = []
+
+						for line in urllib.request.urlopen(url):
+							decoded_line = line.decode("utf-8").replace("\t", "\n")
+							row = decoded_line.splitlines()
+							rows.append(row)
+
+						fields = rows[0]
+						rows.pop(0)
+
+						data = []
+
+						for row in rows:
+							data_row = {}
+							for index, value in enumerate(row):
+								data_row[fields[index]] = value
+							data.append(data_row)
+
+						return data
+					raise (KeyError("url"))
+				raise (KeyError("reportDocumentId"))
 
 # Helper functions
 def validate_amazon_sp_api_credentials(**args):

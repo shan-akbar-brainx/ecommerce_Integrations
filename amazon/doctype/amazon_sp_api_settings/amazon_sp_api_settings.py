@@ -89,10 +89,7 @@ def schedule_get_order_details_10_mins():
 # called every two weeks
 def get_settlement_report():
 	today_date  = datetime.datetime.today()
-	old_date = (today_date - timedelta(days=31))
-	
-	old_date = old_date.astimezone(timezone('US/Pacific'))
-	today_date = today_date.astimezone(timezone('US/Pacific'))
+	old_date = (today_date - timedelta(days=90))
 	old_date = old_date.isoformat()
 	today_date = today_date.isoformat()
 	print(old_date)
