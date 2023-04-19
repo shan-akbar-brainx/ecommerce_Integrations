@@ -146,6 +146,10 @@ scheduler_events = {
 		#Every 10 minutes
 		"*/10 * * * *":[
 			"ecommerce_integrations.amazon.doctype.amazon_sp_api_settings.amazon_sp_api_settings.schedule_get_order_details_10_mins"
+		],
+		#Every two weeks
+		"* * * * *":[
+			"ecommerce_integrations.amazon.doctype.amazon_sp_api_settings.amazon_sp_api_settings.get_settlement_report"
 		]
 	},
 }

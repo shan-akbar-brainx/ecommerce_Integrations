@@ -628,22 +628,12 @@ class AmazonRepository:
 
 		return products
 
-	def get_settlement_details(self):
-		today_date  = datetime.datetime.today()
-		old_date = (today_date - timedelta(days=15))
-		
-		old_date = old_date.astimezone(timezone('US/Pacific'))
-		today_date = today_date.astimezone(timezone('US/Pacific'))
-		old_date = old_date.isoformat()
-		today_date = today_date.isoformat()
-		print(old_date)
-		print(today_date)
-		report_id = self.create_report("GET_V2_SETTLEMENT_REPORT_DATA_FLAT_FILE", old_date, today_date)
-		if report_id:
-			report_document = self.get_report_document(report_id)
-
-			if report_document:
-				print(report_document)
+	def get_settlement_details(self, old_date, today_date):
+		reports = self.get_reports_instance()
+		response = reports.request_reports(
+			report_types=['GET_V2_SETTLEMENT_REPORT_DATA_FLAT_FILE'], created_since=old_date, created_until=today_date
+		)
+		print(response)
 
 	# Related to Reports
 	def get_reports_instance(self):
@@ -657,7 +647,7 @@ class AmazonRepository:
 		response = reports.create_report(
 			report_type=report_type, data_start_time=data_start_time, data_end_time=data_end_time
 		)
-		
+	
 		return response.get("reportId")
 
 	def get_report_document(self, report_id):
@@ -737,3 +727,7 @@ def get_orders(amz_setting_name, last_updated_after, last_updated_before):
 def get_products_details(amz_setting_name):
 	amazon_repository = AmazonRepository(amz_setting_name)
 	return amazon_repository.get_products_details()
+
+def get_settlement_details(amz_setting_name, old_date, today_date):
+	amazon_repository = AmazonRepository(amz_setting_name)
+	return amazon_repository.get_settlement_details(old_date, today_date)

@@ -427,6 +427,34 @@ class Reports(SPAPI):
 
 		return self.make_request(method="POST", append_to_base_uri=append_to_base_uri, data=data)
 
+	def request_reports(
+		self,
+		report_types: list,
+		processing_statuses: list = None,
+		page_size: int = 10,
+		created_since: str = None,
+		created_until: str = None,
+		marketplace_ids: list = None,
+		next_token: str = None
+	) -> dict:
+		""" Returns reports created or updated during the time frame indicated by the specified parameters. You can also apply a range of filtering criteria to narrow the list of reports returned. If NextToken is present, that will be used to retrieve the reports instead of other criteria. """
+		append_to_base_uri = "/reports"
+		data = dict(
+			createdSince=created_since,
+			createdUntil=created_until,
+			pageSize=page_size,
+			nextToken=next_token,
+			reportTypes=report_types,
+			marketplaceIds=marketplace_ids,
+			processingStatuses=processing_statuses
+		)
+		
+		if not marketplace_ids:
+			marketplace_ids = [self.marketplace_id]
+			data["marketplaceIds"] = marketplace_ids
+		print(data)
+		return self.make_request(append_to_base_uri=append_to_base_uri, params=data)
+
 	def get_report(self, report_id: str) -> dict:
 		""" Returns report details (including the reportDocumentId, if available) for the report that you specify. """
 		append_to_base_uri = f"/reports/{report_id}"

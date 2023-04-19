@@ -11,6 +11,7 @@ from ecommerce_integrations.amazon.doctype.amazon_sp_api_settings.amazon_reposit
 	get_orders,
 	get_products_details,
 	validate_amazon_sp_api_credentials,
+	get_settlement_details
 )
 
 import datetime
@@ -84,6 +85,23 @@ def schedule_get_order_details_10_mins():
 		print(after_date)
 		print(before_date)
 		get_orders(amz_setting_name=amz_setting, last_updated_after=after_date, last_updated_before=before_date)
+
+# called every two weeks
+def get_settlement_report():
+	today_date  = datetime.datetime.today()
+	old_date = (today_date - timedelta(days=31))
+	
+	old_date = old_date.astimezone(timezone('US/Pacific'))
+	today_date = today_date.astimezone(timezone('US/Pacific'))
+	old_date = old_date.isoformat()
+	today_date = today_date.isoformat()
+	print(old_date)
+	print(today_date)
+	amz_settings = frappe.get_all(
+		"Amazon SP API Settings", filters={"is_active": 1, "enable_sync": 1}, pluck="name"
+	)
+	for amz_setting in amz_settings:
+		get_settlement_details(amz_setting_name=amz_setting, old_date=old_date, today_date=today_date)
 
 def setup_custom_fields():
 	custom_fields = {
