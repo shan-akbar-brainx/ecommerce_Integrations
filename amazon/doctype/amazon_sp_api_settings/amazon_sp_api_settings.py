@@ -86,19 +86,23 @@ def schedule_get_order_details_10_mins():
 		print(before_date)
 		get_orders(amz_setting_name=amz_setting, last_updated_after=after_date, last_updated_before=before_date)
 
-# called every two weeks
+# called every Thursday at 13:30 and every Saturdat at 00:30
 def get_settlement_report():
-	today_date  = datetime.datetime.today()
-	old_date = (today_date - timedelta(days=90))
-	old_date = old_date.isoformat()
-	today_date = today_date.isoformat()
-	print(old_date)
-	print(today_date)
+	created_until  = datetime.datetime.today()
+	created_since = (created_until - timedelta(days=1))
+	created_since = created_since.isoformat()
+	created_until = created_until.isoformat()
+	created_since = "2023-04-12T13:30"
+	created_until = "2023-04-13T13:30"
+	print(created_since)
+	print(created_until)
+
 	amz_settings = frappe.get_all(
 		"Amazon SP API Settings", filters={"is_active": 1, "enable_sync": 1}, pluck="name"
 	)
 	for amz_setting in amz_settings:
-		get_settlement_details(amz_setting_name=amz_setting, old_date=old_date, today_date=today_date)
+		get_settlement_details(amz_setting_name=amz_setting, created_since=created_since, created_until=created_until)
+
 
 def setup_custom_fields():
 	custom_fields = {

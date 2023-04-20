@@ -1,7 +1,7 @@
 # Copyright (c) 2022, Frappe and contributors
 # For license information, please see license.txt
 
-
+from datetime import date
 import time
 import urllib.request
 from json import dumps
@@ -628,19 +628,81 @@ class AmazonRepository:
 
 		return products
 
-	def get_settlement_details(self, old_date, today_date):
-		reports = self.get_reports_instance()
-		response = reports.request_reports(
-			report_types=['GET_V2_SETTLEMENT_REPORT_DATA_FLAT_FILE'], created_since=old_date, created_until=today_date
-		)
-		reportDocuments = {}
-		print(response)
-		reports = response.get("reports")
-		for report in reports:
-			reportId = report.get("reportId")
-			# reportDocuments[reportId] = self.get_settlement_report_document(response=report)
+	def get_settlement_details(self, created_since, created_until):
+		
+		self.create_payment_entry()
+		# reports = self.get_reports_instance()
+		
+		# response = reports.request_reports(
+		# 	report_types=['GET_V2_SETTLEMENT_REPORT_DATA_FLAT_FILE'], created_since=created_since, created_until=created_until
+		# )
 
-		print(reportDocuments)
+		# reportDocumentsData = []
+		# uniqueOrderIds = []
+		
+		# reports = response.get("reports")
+		# for report in reports:
+		# 	reportId = report.get("reportId")
+		# 	reportDocumentsData, uniqueOrderIds = self.get_settlement_report_document(response=report, reportDocumentsData=reportDocumentsData, uniqueOrderIds=uniqueOrderIds)
+			
+
+		# if(len(reportDocumentsData)):
+		# 	for order_id in uniqueOrderIds:
+		# 		order_id = "113-7542028-2943442"
+		# 		filtered_order_rows = list(filter(lambda item: item['order-id'] == order_id, reportDocumentsData))
+		# 		customer_name = "Buyer - " + order_id
+		# 		sales_order_invoice = frappe.db.get_value(
+		# 			"Sales Invoice", filters={"customer": customer_name}, fieldname="name"
+		# 		)
+		# 		print(sales_order_invoice)
+		# 		if(sales_order_invoice):
+		# 			sales_order_invoice = frappe.get_last_doc('Sales Invoice', filters={"customer": customer_name})
+	
+	#related to invoice payment
+	def create_payment_entry(self):
+		order_id = "112-3692729-5293040"
+		customer_name = "Buyer - " + order_id
+		sales_order_invoice_name = frappe.db.get_value(
+			"Sales Invoice", filters={"customer": customer_name}, fieldname="name"
+		)
+		print(sales_order_invoice_name)
+		if(sales_order_invoice_name):
+			sales_order_invoice = frappe.get_last_doc('Sales Invoice', filters={"customer": customer_name})
+			today = date.today()
+			today = today.strftime("%Y-%m-%d")
+			contact_person = customer_name + "-" + customer_name 
+			invoice_payment_entry = frappe.get_doc(
+				{
+					"doctype": "Payment Entry",
+					"naming_series": "ACC-PAY-.YYYY.-",
+					"posting_date": today,
+					"party_type": "Customer",
+					"party": customer_name,
+					"party_name": customer_name,
+					"contact_person": contact_person,
+					"paid_amount": sales_order_invoice.outstanding_amount,
+					"received_amount": sales_order_invoice.outstanding_amount,
+					"source_exchange_rate": 1,
+					"target_exchange_rate": 1,
+					"paid_to_account_currency": "PKR",
+					"paid_to": "Bank of America - CML - CML",
+					"paid_from": "Debtors - CML",
+					"reference_no": sales_order_invoice_name,
+					"reference_date": today
+				}
+			)
+		
+			invoice_payment_entry.append("references", {"reference_doctype": "Sales Invoice", 
+			"reference_name":  sales_order_invoice_name, 
+			"total_amount": sales_order_invoice.outstanding_amount, 
+			"outstanding_amount": sales_order_invoice.outstanding_amount, 
+			"allocated_amount": sales_order_invoice.outstanding_amount })
+			invoice_payment_entry.insert()
+			invoice_payment_entry.submit()
+			frappe.db.commit()
+
+
+
 
 
 	# Related to Reports
@@ -702,9 +764,8 @@ class AmazonRepository:
 					raise (KeyError("url"))
 				raise (KeyError("reportDocumentId"))
 
-	def get_settlement_report_document(self, response):
+	def get_settlement_report_document(self, response, reportDocumentsData, uniqueOrderIds):
 		reports = self.get_reports_instance()
-
 		for x in range(3):
 			processingStatus = response.get("processingStatus")
 
@@ -717,31 +778,40 @@ class AmazonRepository:
 				raise (f"Report Processing Status: {processingStatus}")
 			elif processingStatus == "DONE":
 				report_document_id = response.get("reportDocumentId")
-
+				print(report_document_id)
 				if report_document_id:
 					response = reports.get_report_document(report_document_id)
 					url = response.get("url")
-
+					print(url)
+					counter = 0
 					if url:
 						rows = []
-
-						for line in urllib.request.urlopen(url):
+						raw_data = urllib.request.urlopen(url)
+						for line in raw_data:
 							decoded_line = line.decode("utf-8").replace("\t", "\n")
 							row = decoded_line.splitlines()
 							rows.append(row)
-
+							counter = counter + 1
+							print(counter)
+							if(counter == 100):
+								break
 						fields = rows[0]
 						rows.pop(0)
-
-						data = []
-
+						
 						for row in rows:
 							data_row = {}
 							for index, value in enumerate(row):
 								data_row[fields[index]] = value
-							data.append(data_row)
+								if fields[index] == "order-id":
+									if value not in uniqueOrderIds:
+										uniqueOrderIds.append(value)
+							reportDocumentsData.append(data_row)
+							counter = counter + 1
+							print(counter)
+							if(counter == 200):
+								break
 
-						return data
+						return reportDocumentsData, uniqueOrderIds
 					raise (KeyError("url"))
 				raise (KeyError("reportDocumentId"))
 
@@ -778,6 +848,6 @@ def get_products_details(amz_setting_name):
 	amazon_repository = AmazonRepository(amz_setting_name)
 	return amazon_repository.get_products_details()
 
-def get_settlement_details(amz_setting_name, old_date, today_date):
+def get_settlement_details(amz_setting_name, created_since, created_until):
 	amazon_repository = AmazonRepository(amz_setting_name)
-	return amazon_repository.get_settlement_details(old_date, today_date)
+	return amazon_repository.get_settlement_details(created_since, created_until)
