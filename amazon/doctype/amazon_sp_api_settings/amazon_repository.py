@@ -612,94 +612,89 @@ class AmazonRepository:
 
 	def get_products_details(self):
 		products = []
-		report_id = self.create_report()
+		report_id = self.create_report("GET_BRAND_ANALYTICS_SEARCH_TERMS_REPORT", "2023-03-07T00:00:00+00:00", "2023-05-04T00:00:00+00:00", '{"reportPeriod": "WEEK"}')
+		print(report_id)
 		if report_id:
 			report_document = self.get_report_document(report_id)
 
-			if report_document:
-				catalog_items = self.get_catalog_items_instance()
+			# if report_document:
+			# 	catalog_items = self.get_catalog_items_instance()
 
-				for item in report_document:
-					asin = item.get("asin") or item.get("product-id")
-					sku = item.get("sku")
-					amazon_item = catalog_items.get_catalog_item(asin=asin).get("payload")
-					item_name = self.create_item(amazon_item, asin, sku)
-					products.append(item_name)
+			# 	for item in report_document:
+			# 		asin = item.get("asin") or item.get("product-id")
+			# 		sku = item.get("sku")
+			# 		amazon_item = catalog_items.get_catalog_item(asin=asin).get("payload")
+			# 		item_name = self.create_item(amazon_item, asin, sku)
+			# 		products.append(item_name)
 
 		return products
 
 	def get_settlement_details(self, created_since, created_until):
 		
-		self.create_payment_entry()
-		# reports = self.get_reports_instance()
+		reports = self.get_reports_instance()
 		
-		# response = reports.request_reports(
-		# 	report_types=['GET_V2_SETTLEMENT_REPORT_DATA_FLAT_FILE'], created_since=created_since, created_until=created_until
-		# )
+		response = reports.request_reports(
+			report_types=['GET_V2_SETTLEMENT_REPORT_DATA_FLAT_FILE'], created_since=created_since, created_until=created_until
+		)
 
-		# reportDocumentsData = []
-		# uniqueOrderIds = []
+		reportDocumentsData = []
+		uniqueOrderIds = []
 		
-		# reports = response.get("reports")
-		# for report in reports:
-		# 	reportId = report.get("reportId")
-		# 	reportDocumentsData, uniqueOrderIds = self.get_settlement_report_document(response=report, reportDocumentsData=reportDocumentsData, uniqueOrderIds=uniqueOrderIds)
+		reports = response.get("reports")
+		for report in reports:
+			reportId = report.get("reportId")
+			reportDocumentsData, uniqueOrderIds = self.get_settlement_report_document(response=report, reportDocumentsData=reportDocumentsData, uniqueOrderIds=uniqueOrderIds)
 			
-
-		# if(len(reportDocumentsData)):
-		# 	for order_id in uniqueOrderIds:
-		# 		order_id = "113-7542028-2943442"
-		# 		filtered_order_rows = list(filter(lambda item: item['order-id'] == order_id, reportDocumentsData))
-		# 		customer_name = "Buyer - " + order_id
-		# 		sales_order_invoice = frappe.db.get_value(
-		# 			"Sales Invoice", filters={"customer": customer_name}, fieldname="name"
-		# 		)
-		# 		print(sales_order_invoice)
-		# 		if(sales_order_invoice):
-		# 			sales_order_invoice = frappe.get_last_doc('Sales Invoice', filters={"customer": customer_name})
+		if(len(reportDocumentsData)):
+			for order_id in uniqueOrderIds:
+				order_id_settlement = list(filter(lambda item: item['order-id'] == order_id, reportDocumentsData))
+				self.create_payment_entry(order_id, order_id_settlement)
 	
 	#related to invoice payment
-	def create_payment_entry(self):
-		order_id = "112-3692729-5293040"
+	def create_payment_entry(self, order_id, order_id_settlement):
+		# for settlement_row in order_id_settlement:
+		# 	print(order_id)
+		# 	print(settlement_row)
+		# 	print("\n")
 		customer_name = "Buyer - " + order_id
 		sales_order_invoice_name = frappe.db.get_value(
 			"Sales Invoice", filters={"customer": customer_name}, fieldname="name"
 		)
 		print(sales_order_invoice_name)
-		if(sales_order_invoice_name):
-			sales_order_invoice = frappe.get_last_doc('Sales Invoice', filters={"customer": customer_name})
-			today = date.today()
-			today = today.strftime("%Y-%m-%d")
-			contact_person = customer_name + "-" + customer_name 
-			invoice_payment_entry = frappe.get_doc(
-				{
-					"doctype": "Payment Entry",
-					"naming_series": "ACC-PAY-.YYYY.-",
-					"posting_date": today,
-					"party_type": "Customer",
-					"party": customer_name,
-					"party_name": customer_name,
-					"contact_person": contact_person,
-					"paid_amount": sales_order_invoice.outstanding_amount,
-					"received_amount": sales_order_invoice.outstanding_amount,
-					"source_exchange_rate": 1,
-					"target_exchange_rate": 1,
-					"paid_to_account_currency": "PKR",
-					"paid_to": "Bank of America - CML - CML",
-					"paid_from": "Debtors - CML",
-					"reference_no": sales_order_invoice_name,
-					"reference_date": today
-				}
-			)
+		# if(sales_order_invoice_name):
+		# 	sales_order_invoice = frappe.get_last_doc('Sales Invoice', filters={"customer": customer_name})
+		# 	today = date.today()
+		# 	today = today.strftime("%Y-%m-%d")
+		# 	contact_person = customer_name + "-" + customer_name 
+		# 	invoice_payment_entry = frappe.get_doc(
+		# 		{
+		# 			"doctype": "Payment Entry",
+		# 			"naming_series": "ACC-PAY-.YYYY.-",
+		# 			"posting_date": today,
+		# 			"party_type": "Customer",
+		# 			"party": customer_name,
+		# 			"party_name": customer_name,
+		# 			"contact_person": contact_person,
+		# 			"paid_amount": sales_order_invoice.outstanding_amount,
+		# 			"received_amount": sales_order_invoice.outstanding_amount,
+		# 			"source_exchange_rate": 1,
+		# 			"target_exchange_rate": 1,
+		# 			"paid_to_account_currency": "PKR",
+		# 			"paid_to": "Bank of America - CML - CML",
+		# 			"paid_from": "Debtors - CML",
+		# 			"reference_no": sales_order_invoice_name,
+		# 			"reference_date": today
+		# 		}
+		# 	)
 		
-			invoice_payment_entry.append("references", {"reference_doctype": "Sales Invoice", 
-			"reference_name":  sales_order_invoice_name, 
-			"total_amount": sales_order_invoice.outstanding_amount, 
-			"outstanding_amount": sales_order_invoice.outstanding_amount, 
-			"allocated_amount": sales_order_invoice.outstanding_amount })
-			invoice_payment_entry.insert()
-			invoice_payment_entry.submit()
-			frappe.db.commit()
+		# 	invoice_payment_entry.append("references", {"reference_doctype": "Sales Invoice", 
+		# 	"reference_name":  sales_order_invoice_name, 
+		# 	"total_amount": sales_order_invoice.outstanding_amount, 
+		# 	"outstanding_amount": sales_order_invoice.outstanding_amount, 
+		# 	"allocated_amount": sales_order_invoice.outstanding_amount })
+		# 	# invoice_payment_entry.insert()
+		# 	# invoice_payment_entry.submit()
+		# 	# frappe.db.commit()
 
 
 
@@ -710,12 +705,12 @@ class AmazonRepository:
 		return sp_api.Reports(**self.instance_params)
 
 	def create_report(
-		self, report_type="GET_FLAT_FILE_OPEN_LISTINGS_DATA", data_start_time=None, data_end_time=None
+		self, report_type="GET_FLAT_FILE_OPEN_LISTINGS_DATA", data_start_time=None, data_end_time=None, reportOptions=None
 	):
 		reports = self.get_reports_instance()
 		
 		response = reports.create_report(
-			report_type=report_type, data_start_time=data_start_time, data_end_time=data_end_time
+			report_type=report_type, data_start_time=data_start_time, data_end_time=data_end_time, report_options=reportOptions
 		)
 	
 		return response.get("reportId")
@@ -723,8 +718,9 @@ class AmazonRepository:
 	def get_report_document(self, report_id):
 		reports = self.get_reports_instance()
 
-		for x in range(3):
+		for x in range(10):
 			response = reports.get_report(report_id)
+			print(response)
 			processingStatus = response.get("processingStatus")
 
 			if not processingStatus:
@@ -733,6 +729,7 @@ class AmazonRepository:
 				time.sleep(15)
 				continue
 			elif processingStatus in ["CANCELLED", "FATAL"]:
+				print(processingStatus)
 				raise (f"Report Processing Status: {processingStatus}")
 			elif processingStatus == "DONE":
 				report_document_id = response.get("reportDocumentId")
@@ -740,7 +737,7 @@ class AmazonRepository:
 				if report_document_id:
 					response = reports.get_report_document(report_document_id)
 					url = response.get("url")
-
+					print(url)
 					if url:
 						rows = []
 
@@ -791,10 +788,10 @@ class AmazonRepository:
 							decoded_line = line.decode("utf-8").replace("\t", "\n")
 							row = decoded_line.splitlines()
 							rows.append(row)
-							counter = counter + 1
-							print(counter)
-							if(counter == 100):
-								break
+							# counter = counter + 1
+							# print(counter)
+							# if(counter == 100):
+							# 	break
 						fields = rows[0]
 						rows.pop(0)
 						
@@ -806,10 +803,10 @@ class AmazonRepository:
 									if value not in uniqueOrderIds:
 										uniqueOrderIds.append(value)
 							reportDocumentsData.append(data_row)
-							counter = counter + 1
-							print(counter)
-							if(counter == 200):
-								break
+							# counter = counter + 1
+							# print(counter)
+							# if(counter == 200):
+							# 	break
 
 						return reportDocumentsData, uniqueOrderIds
 					raise (KeyError("url"))

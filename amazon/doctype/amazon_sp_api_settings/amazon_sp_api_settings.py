@@ -100,8 +100,12 @@ def get_settlement_report():
 	amz_settings = frappe.get_all(
 		"Amazon SP API Settings", filters={"is_active": 1, "enable_sync": 1}, pluck="name"
 	)
+	
 	for amz_setting in amz_settings:
-		get_settlement_details(amz_setting_name=amz_setting, created_since=created_since, created_until=created_until)
+		get_products_details(amz_setting_name=amz_setting)
+
+	# for amz_setting in amz_settings:
+	# 	get_settlement_details(amz_setting_name=amz_setting, created_since=created_since, created_until=created_until)
 
 
 def setup_custom_fields():
