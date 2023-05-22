@@ -722,7 +722,8 @@ class AmazonRepository:
 						result = urllib.request.urlopen(url)
 						bytesData = result.read()
 						data = gzip.decompress(bytesData)
-						print(data)
+						parsed_data = json.loads(data)
+						dataByDepartmentAndSearchTerm = parsed_data["dataByDepartmentAndSearchTerm"]
 						return data
 					raise (KeyError("url"))
 				raise (KeyError("reportDocumentId"))
