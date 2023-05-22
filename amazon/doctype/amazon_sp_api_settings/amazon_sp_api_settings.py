@@ -11,6 +11,7 @@ from ecommerce_integrations.amazon.doctype.amazon_sp_api_settings.amazon_reposit
 	get_orders,
 	get_products_details,
 	validate_amazon_sp_api_credentials,
+	get_brand_analytics_report
 )
 
 import datetime
@@ -84,6 +85,22 @@ def schedule_get_order_details_10_mins():
 		print(after_date)
 		print(before_date)
 		get_orders(amz_setting_name=amz_setting, last_updated_after=after_date, last_updated_before=before_date)
+
+# Called via a hook in every 10 minutes
+def get_brand_analytics_report_hook():
+	print("get_brand_analytics_report_hook")
+	amz_settings = frappe.get_all(
+		"Amazon SP API Settings", filters={"is_active": 1, "enable_sync": 1}, pluck="name"
+	)
+	
+
+	for amz_setting in amz_settings:
+		after_date = frappe.get_value("Amazon SP API Settings", amz_setting, "after_date")
+		print(after_date)
+		data_start_time = "2023-04-30T00:00:00"
+		data_end_time = "2023-04-30T23:59:59"
+		get_brand_analytics_report(amz_setting_name=amz_setting, data_start_time=data_start_time, data_end_time=data_end_time)
+		
 
 def setup_custom_fields():
 	custom_fields = {

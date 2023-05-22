@@ -425,6 +425,7 @@ class Reports(SPAPI):
 			marketplace_ids = [self.marketplace_id]
 			data["marketplaceIds"] = marketplace_ids
 
+		print(data)
 		return self.make_request(method="POST", append_to_base_uri=append_to_base_uri, data=data)
 
 	def get_report(self, report_id: str) -> dict:
