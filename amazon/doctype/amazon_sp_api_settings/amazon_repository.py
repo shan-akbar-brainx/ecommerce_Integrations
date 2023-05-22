@@ -9,6 +9,8 @@ import dateutil
 import os
 import frappe
 from frappe import _
+import gzip
+import json
 
 import ecommerce_integrations.amazon.doctype.amazon_sp_api_settings.amazon_sp_api as sp_api
 
@@ -628,17 +630,23 @@ class AmazonRepository:
 
 		return products
 
+	def get_brand_analytics_report(self, data_start_time, data_end_time):
+		report_id = self.create_report("GET_BRAND_ANALYTICS_SEARCH_TERMS_REPORT", data_start_time, data_end_time, {"reportPeriod": "DAY"})
+		print(report_id)
+		if report_id:
+			report_document = self.get_report_document_brand_analytics_report(report_id)
+
 	# Related to Reports
 	def get_reports_instance(self):
 		return sp_api.Reports(**self.instance_params)
 
 	def create_report(
-		self, report_type="GET_FLAT_FILE_OPEN_LISTINGS_DATA", data_start_time=None, data_end_time=None
+		self, report_type="GET_FLAT_FILE_OPEN_LISTINGS_DATA", data_start_time=None, data_end_time=None, report_options=None
 	):
 		reports = self.get_reports_instance()
 		
 		response = reports.create_report(
-			report_type=report_type, data_start_time=data_start_time, data_end_time=data_end_time
+			report_type=report_type, data_start_time=data_start_time, data_end_time=data_end_time, report_options=report_options
 		)
 		
 		return response.get("reportId")
@@ -687,6 +695,38 @@ class AmazonRepository:
 					raise (KeyError("url"))
 				raise (KeyError("reportDocumentId"))
 
+	def get_report_document_brand_analytics_report(self, report_id):
+		reports = self.get_reports_instance()
+
+		for x in range(3):
+			response = reports.get_report(report_id)
+			processingStatus = response.get("processingStatus")
+
+			if not processingStatus:
+				raise (KeyError("processingStatus"))
+			elif processingStatus in ["IN_PROGRESS", "IN_QUEUE"]:
+				time.sleep(15)
+				continue
+			elif processingStatus in ["CANCELLED", "FATAL"]:
+				raise (f"Report Processing Status: {processingStatus}")
+			elif processingStatus == "DONE":
+				report_document_id = response.get("reportDocumentId")
+
+				if report_document_id:
+					response = reports.get_report_document(report_document_id)
+					print(response)
+					
+					url = response.get("url")
+
+					if url:
+						result = urllib.request.urlopen(url)
+						bytesData = result.read()
+						data = gzip.decompress(bytesData)
+						print(data)
+						return data
+					raise (KeyError("url"))
+				raise (KeyError("reportDocumentId"))
+
 
 # Helper functions
 def validate_amazon_sp_api_credentials(**args):
@@ -720,3 +760,7 @@ def get_orders(amz_setting_name, last_updated_after, last_updated_before):
 def get_products_details(amz_setting_name):
 	amazon_repository = AmazonRepository(amz_setting_name)
 	return amazon_repository.get_products_details()
+
+def get_brand_analytics_report(amz_setting_name, data_start_time, data_end_time):
+	amazon_repository = AmazonRepository(amz_setting_name)
+	return amazon_repository.get_brand_analytics_report(data_start_time, data_end_time)
