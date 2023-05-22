@@ -724,7 +724,7 @@ class AmazonRepository:
 						data = gzip.decompress(bytesData)
 						parsed_data = json.loads(data)
 						dataByDepartmentAndSearchTerm = parsed_data["dataByDepartmentAndSearchTerm"]
-						return data
+						return dataByDepartmentAndSearchTerm
 					raise (KeyError("url"))
 				raise (KeyError("reportDocumentId"))
 
