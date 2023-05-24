@@ -11,6 +11,7 @@ import frappe
 from frappe import _
 import gzip
 import json
+import zlib
 
 import ecommerce_integrations.amazon.doctype.amazon_sp_api_settings.amazon_sp_api as sp_api
 
@@ -743,7 +744,8 @@ class AmazonRepository:
 					if url:
 						result = urllib.request.urlopen(url)
 						bytesData = result.read()
-						data = gzip.decompress(bytesData)
+						# data = gzip.decompress(bytesData)
+						data = zlib.decompress(bytesData, 16+zlib.MAX_WBITS)
 						parsed_data = json.loads(data)
 						dataByDepartmentAndSearchTerm = parsed_data["dataByDepartmentAndSearchTerm"]
 						print(len(dataByDepartmentAndSearchTerm))
