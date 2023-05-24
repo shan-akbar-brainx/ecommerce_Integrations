@@ -18,6 +18,9 @@ import datetime
 from datetime import timedelta
 from pytz import timezone
 import pytz
+
+
+
 class AmazonSPAPISettings(Document):
 	def validate(self):
 		if self.is_active == 1:
@@ -92,13 +95,22 @@ def get_brand_analytics_report_hook():
 	amz_settings = frappe.get_all(
 		"Amazon SP API Settings", filters={"is_active": 1, "enable_sync": 1}, pluck="name"
 	)
-	
+	new_swipe_in_end  = datetime.datetime.today()
+	new_swipe_in_start = (new_swipe_in_end - timedelta(days=2))
+	new_swipe_in_end = (new_swipe_in_end - timedelta(days=2))
+	new_swipe_in_start = new_swipe_in_start.replace(hour=0, minute=0, second=0, microsecond=0)
+	new_swipe_in_end = new_swipe_in_end.replace(hour=23, minute=59, second=59, microsecond=0)
 
+	new_swipe_in_start = new_swipe_in_start.isoformat()
+	new_swipe_in_end = new_swipe_in_end.isoformat()
+	print(new_swipe_in_start)
+	print(new_swipe_in_end)
+	
 	for amz_setting in amz_settings:
-		after_date = frappe.get_value("Amazon SP API Settings", amz_setting, "after_date")
-		print(after_date)
-		data_start_time = "2023-04-30T00:00:00"
-		data_end_time = "2023-04-30T23:59:59"
+		data_start_time = new_swipe_in_start
+		data_end_time = new_swipe_in_end
+		# data_start_time = "2023-04-30T00:00:00"
+		# data_end_time = "2023-04-30T23:59:59"
 		get_brand_analytics_report(amz_setting_name=amz_setting, data_start_time=data_start_time, data_end_time=data_end_time)
 		
 

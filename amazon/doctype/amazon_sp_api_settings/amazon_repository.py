@@ -15,6 +15,13 @@ import json
 import ecommerce_integrations.amazon.doctype.amazon_sp_api_settings.amazon_sp_api as sp_api
 
 
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
+
+# Replace the placeholder with your Atlas connection string
+uri = "mongodb+srv://amazon-sp-api:x95f6xdPsgdF5dxw@amazon-sp-api-data.ugvzbzp.mongodb.net/?retryWrites=true&w=majority"
+# Set the Stable API version when creating a new client
+
 class AmazonRepository:
 	def __init__(self, amz_setting_name) -> None:
 		self.amz_setting = frappe.get_doc("Amazon SP API Settings", amz_setting_name)
@@ -631,10 +638,24 @@ class AmazonRepository:
 		return products
 
 	def get_brand_analytics_report(self, data_start_time, data_end_time):
+		
 		report_id = self.create_report("GET_BRAND_ANALYTICS_SEARCH_TERMS_REPORT", data_start_time, data_end_time, {"reportPeriod": "DAY"})
 		print(report_id)
 		if report_id:
-			report_document = self.get_report_document_brand_analytics_report(report_id)
+			report_data = self.get_report_document_brand_analytics_report(report_id)
+			# write data to mongodb database
+			client = MongoClient(uri, server_api=ServerApi('1'))         
+			# Send a ping to confirm a successful connection
+			try:
+				client.admin.command('ping')
+				print("Pinged your deployment. You successfully connected to MongoDB!")
+				database = client["Amazon-Sp-API-Reports"]
+				collection = database["Brand-Analytics-Report"]
+				
+				result = collection.insert_many(report_data)
+				print('Brnad Analytics Data added successfully!')
+			except Exception as e:
+				print(e)
 
 	# Related to Reports
 	def get_reports_instance(self):
@@ -698,8 +719,9 @@ class AmazonRepository:
 	def get_report_document_brand_analytics_report(self, report_id):
 		reports = self.get_reports_instance()
 
-		for x in range(3):
+		for x in range(10):
 			response = reports.get_report(report_id)
+			print(response)
 			processingStatus = response.get("processingStatus")
 
 			if not processingStatus:
@@ -724,6 +746,7 @@ class AmazonRepository:
 						data = gzip.decompress(bytesData)
 						parsed_data = json.loads(data)
 						dataByDepartmentAndSearchTerm = parsed_data["dataByDepartmentAndSearchTerm"]
+						print(len(dataByDepartmentAndSearchTerm))
 						return dataByDepartmentAndSearchTerm
 					raise (KeyError("url"))
 				raise (KeyError("reportDocumentId"))
