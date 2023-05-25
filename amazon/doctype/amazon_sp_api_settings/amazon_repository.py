@@ -720,7 +720,7 @@ class AmazonRepository:
 	def get_report_document_brand_analytics_report(self, report_id):
 		reports = self.get_reports_instance()
 
-		for x in range(10):
+		for x in range(100):
 			response = reports.get_report(report_id)
 			print(response)
 			processingStatus = response.get("processingStatus")
@@ -737,6 +737,7 @@ class AmazonRepository:
 
 				if report_document_id:
 					response = reports.get_report_document(report_document_id)
+					
 					print(response)
 					
 					url = response.get("url")
