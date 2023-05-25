@@ -744,8 +744,7 @@ class AmazonRepository:
 					if url:
 						result = urllib.request.urlopen(url)
 						bytesData = result.read()
-						# data = gzip.decompress(bytesData)
-						data = zlib.decompress(bytesData, 16+zlib.MAX_WBITS)
+						data = gzip.decompress(bytesData)
 						parsed_data = json.loads(data)
 						dataByDepartmentAndSearchTerm = parsed_data["dataByDepartmentAndSearchTerm"]
 						print(len(dataByDepartmentAndSearchTerm))
