@@ -11,7 +11,8 @@ from ecommerce_integrations.amazon.doctype.amazon_sp_api_settings.amazon_reposit
 	get_orders,
 	get_products_details,
 	validate_amazon_sp_api_credentials,
-	get_brand_analytics_report
+	get_brand_analytics_report,
+	get_settlement_details
 )
 
 import datetime
@@ -89,7 +90,7 @@ def schedule_get_order_details_10_mins():
 		print(before_date)
 		get_orders(amz_setting_name=amz_setting, last_updated_after=after_date, last_updated_before=before_date)
 
-# Called via a hook in every 10 minutes
+# Called via a hook in every 24 hours
 def get_brand_analytics_report_hook():
 	print("get_brand_analytics_report_hook")
 	amz_settings = frappe.get_all(
@@ -113,6 +114,23 @@ def get_brand_analytics_report_hook():
 		# data_end_time = "2023-04-30T23:59:59"
 		get_brand_analytics_report(amz_setting_name=amz_setting, data_start_time=data_start_time, data_end_time=data_end_time)
 		
+# called every Thursday at 13:30 and every Saturdat at 00:30
+def get_settlement_report():
+	created_until  = datetime.datetime.today()
+	created_since = (created_until - timedelta(days=1))
+	created_since = created_since.isoformat()
+	created_until = created_until.isoformat()
+	created_since = "2023-05-24T13:30"
+	created_until = "2023-05-25T13:30"
+	print(created_since)
+	print(created_until)
+
+	amz_settings = frappe.get_all(
+		"Amazon SP API Settings", filters={"is_active": 1, "enable_sync": 1}, pluck="name"
+	)
+
+	for amz_setting in amz_settings:
+		get_settlement_details(amz_setting_name=amz_setting, created_since=created_since, created_until=created_until)
 
 def setup_custom_fields():
 	custom_fields = {
