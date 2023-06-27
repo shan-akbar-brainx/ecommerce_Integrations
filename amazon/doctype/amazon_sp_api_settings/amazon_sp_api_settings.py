@@ -120,8 +120,7 @@ def get_settlement_report():
 	created_since = (created_until - timedelta(days=1))
 	created_since = created_since.isoformat()
 	created_until = created_until.isoformat()
-	created_since = "2023-05-24T13:30"
-	created_until = "2023-05-25T13:30"
+	
 	print(created_since)
 	print(created_until)
 

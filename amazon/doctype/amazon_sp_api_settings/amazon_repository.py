@@ -666,50 +666,50 @@ class AmazonRepository:
 		
 		if(sales_order_invoice_name):
 			print(sales_order_invoice_name)
-			print(order_id_settlements)
+			posted_date = order_id_settlements[0].get("posted-date")
 			taxes_and_charges = self.get_taxes_and_charges_settlement(order_id_settlements)
-			print(taxes_and_charges)
 			sales_order_invoice = frappe.get_last_doc('Sales Invoice', filters={"customer": customer_name})
-			for charge in taxes_and_charges.get("charges"):
-				sales_order_invoice.append("taxes", charge)
-			sales_order_invoice.save()
-			sales_order_invoice.submit()
-			frappe.db.commit()
-			today = date.today()
-			today = today.strftime("%Y-%m-%d")
-			contact_person = customer_name + "-" + customer_name 
-			invoice_payment_entry = frappe.get_doc(
-				{
-					"doctype": "Payment Entry",
-					"naming_series": "ACC-PAY-.YYYY.-",
-					"posting_date": today,
-					"party_type": "Customer",
-					"party": customer_name,
-					"party_name": customer_name,
-					"contact_person": contact_person,
-					"paid_amount": sales_order_invoice.outstanding_amount,
-					"received_amount": sales_order_invoice.outstanding_amount,
-					"source_exchange_rate": 1,
-					"target_exchange_rate": 1,
-					"paid_to_account_currency": "USD",
-					"paid_to": "111500 - Undeposited Funds - CML",
-					"paid_from":"131100 - Accounts Receivable - USD - CML",
-					"paid_from": "Debtors - CML",
-					"bank_account": "Operating Account - Bank of America",
-					"reference_no": sales_order_invoice_name,
-					"reference_date": today,
-					"cost_center": "Amazon - US - CML"
-				}
-			)
+			if(sales_order_invoice.docstatus == 0):
+				for charge in taxes_and_charges.get("charges"):
+					sales_order_invoice.append("taxes", charge)
+				sales_order_invoice.save()
+				sales_order_invoice.submit()
+				frappe.db.commit()
+				
+				posted_date = posted_date.split("T")[0]
+				contact_person = customer_name + "-" + customer_name 
+				invoice_payment_entry = frappe.get_doc(
+					{
+						"doctype": "Payment Entry",
+						"naming_series": "ACC-PAY-.YYYY.-",
+						"posting_date": posted_date,
+						"party_type": "Customer",
+						"party": customer_name,
+						"party_name": customer_name,
+						"contact_person": contact_person,
+						"paid_amount": sales_order_invoice.outstanding_amount,
+						"received_amount": sales_order_invoice.outstanding_amount,
+						"source_exchange_rate": 1,
+						"target_exchange_rate": 1,
+						"paid_to_account_currency": "USD",
+						"paid_to": "111500 - Undeposited Funds - CML",
+						"paid_from":"131100 - Accounts Receivable - USD - CML",
+						"paid_from": "Debtors - CML",
+						"bank_account": "Operating Account - Bank of America",
+						"reference_no": sales_order_invoice_name,
+						"reference_date": posted_date,
+						"cost_center": "Amazon - US - CML"
+					}
+				)
 
-			invoice_payment_entry.append("references", {"reference_doctype": "Sales Invoice", 
-			"reference_name":  sales_order_invoice_name, 
-			"total_amount": sales_order_invoice.outstanding_amount, 
-			"outstanding_amount": sales_order_invoice.outstanding_amount, 
-			"allocated_amount": sales_order_invoice.outstanding_amount })
-			invoice_payment_entry.insert()
-			invoice_payment_entry.submit()
-			frappe.db.commit()
+				invoice_payment_entry.append("references", {"reference_doctype": "Sales Invoice", 
+				"reference_name":  sales_order_invoice_name, 
+				"total_amount": sales_order_invoice.outstanding_amount, 
+				"outstanding_amount": sales_order_invoice.outstanding_amount, 
+				"allocated_amount": sales_order_invoice.outstanding_amount })
+				invoice_payment_entry.insert()
+				invoice_payment_entry.submit()
+				frappe.db.commit()
 
 	def get_taxes_and_charges_settlement(self, order_id_settlements):
 		charges_and_fees = {"charges": []}
