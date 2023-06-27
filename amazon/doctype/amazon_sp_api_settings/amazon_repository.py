@@ -895,8 +895,12 @@ class AmazonRepository:
 						bytesData = result.read()
 						data = gzip.decompress(bytesData)
 						parsed_data = json.loads(data)
+						data_date = parsed_data["reportSpecification"]["dataStartTime"]
 						dataByDepartmentAndSearchTerm = parsed_data["dataByDepartmentAndSearchTerm"]
-						print(len(dataByDepartmentAndSearchTerm))
+						data_length = len(dataByDepartmentAndSearchTerm)
+						print(data_length)
+						for i in range(data_length):
+							dataByDepartmentAndSearchTerm[i]["date-stamp"] = data_date
 						return dataByDepartmentAndSearchTerm
 					raise (KeyError("url"))
 				raise (KeyError("reportDocumentId"))
