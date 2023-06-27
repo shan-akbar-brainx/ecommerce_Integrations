@@ -84,6 +84,7 @@ class AmazonRepository:
 			new_account.company = self.amz_setting.company
 			new_account.parent_account = self.amz_setting.market_place_account_group
 			new_account.insert(ignore_permissions=True)
+			frappe.db.commit()
 			account_name = new_account.name
 
 		return account_name
@@ -645,7 +646,7 @@ class AmazonRepository:
 		reportDocumentsData = []
 		uniqueOrderIds = []
 		print(response)
-
+		reports = response.get("reports")
 		for report in reports:
 			reportId = report.get("reportId")
 			reportDocumentsData, uniqueOrderIds = self.get_settlement_report_document(response=report, reportDocumentsData=reportDocumentsData, uniqueOrderIds=uniqueOrderIds)
@@ -662,41 +663,85 @@ class AmazonRepository:
 		sales_order_invoice_name = frappe.db.get_value(
 			"Sales Invoice", filters={"customer": customer_name}, fieldname="name"
 		)
-		print(sales_order_invoice_name)
+		
 		if(sales_order_invoice_name):
+			print(sales_order_invoice_name)
+			posted_date = order_id_settlements[0].get("posted-date")
+			taxes_and_charges = self.get_taxes_and_charges_settlement(order_id_settlements)
 			sales_order_invoice = frappe.get_last_doc('Sales Invoice', filters={"customer": customer_name})
-			today = date.today()
-			today = today.strftime("%Y-%m-%d")
-			contact_person = customer_name + "-" + customer_name 
-			invoice_payment_entry = frappe.get_doc(
-				{
-					"doctype": "Payment Entry",
-					"naming_series": "ACC-PAY-.YYYY.-",
-					"posting_date": today,
-					"party_type": "Customer",
-					"party": customer_name,
-					"party_name": customer_name,
-					"contact_person": contact_person,
-					"paid_amount": sales_order_invoice.outstanding_amount,
-					"received_amount": sales_order_invoice.outstanding_amount,
-					"source_exchange_rate": 1,
-					"target_exchange_rate": 1,
-					"paid_to_account_currency": "PKR",
-					"paid_to": "Bank of America - CML - CML",
-					"paid_from": "Debtors - CML",
-					"reference_no": sales_order_invoice_name,
-					"reference_date": today
-				}
-			)
+			if(sales_order_invoice.docstatus == 0):
+				for charge in taxes_and_charges.get("charges"):
+					sales_order_invoice.append("taxes", charge)
+				sales_order_invoice.save()
+				sales_order_invoice.submit()
+				frappe.db.commit()
+				
+				posted_date = posted_date.split("T")[0]
+				contact_person = customer_name + "-" + customer_name 
+				invoice_payment_entry = frappe.get_doc(
+					{
+						"doctype": "Payment Entry",
+						"naming_series": "ACC-PAY-.YYYY.-",
+						"posting_date": posted_date,
+						"party_type": "Customer",
+						"party": customer_name,
+						"party_name": customer_name,
+						"contact_person": contact_person,
+						"paid_amount": sales_order_invoice.outstanding_amount,
+						"received_amount": sales_order_invoice.outstanding_amount,
+						"source_exchange_rate": 1,
+						"target_exchange_rate": 1,
+						"paid_to_account_currency": "USD",
+						"paid_to": "111500 - Undeposited Funds - CML",
+						"paid_from":"131100 - Accounts Receivable - USD - CML",
+						"paid_from": "Debtors - CML",
+						"bank_account": "Operating Account - Bank of America",
+						"reference_no": sales_order_invoice_name,
+						"reference_date": posted_date,
+						"cost_center": "Amazon - US - CML"
+					}
+				)
 
-			invoice_payment_entry.append("references", {"reference_doctype": "Sales Invoice", 
-			"reference_name":  sales_order_invoice_name, 
-			"total_amount": sales_order_invoice.outstanding_amount, 
-			"outstanding_amount": sales_order_invoice.outstanding_amount, 
-			"allocated_amount": sales_order_invoice.outstanding_amount })
-			# invoice_payment_entry.insert()
-			# invoice_payment_entry.submit()
-			# frappe.db.commit()
+				invoice_payment_entry.append("references", {"reference_doctype": "Sales Invoice", 
+				"reference_name":  sales_order_invoice_name, 
+				"total_amount": sales_order_invoice.outstanding_amount, 
+				"outstanding_amount": sales_order_invoice.outstanding_amount, 
+				"allocated_amount": sales_order_invoice.outstanding_amount })
+				invoice_payment_entry.insert()
+				invoice_payment_entry.submit()
+				frappe.db.commit()
+
+	def get_taxes_and_charges_settlement(self, order_id_settlements):
+		charges_and_fees = {"charges": []}
+		for settlement in order_id_settlements:
+
+			charge_type = None
+			amount = None
+
+			if(settlement["price-type"]):
+				charge_type = settlement["price-type"]
+				amount = settlement["price-amount"]
+			elif(settlement["item-related-fee-type"]):
+				charge_type = settlement["item-related-fee-type"]
+				amount = settlement["item-related-fee-amount"]
+			elif(settlement["promotion-id"]):
+				charge_type = settlement["promotion-id"]
+				amount = settlement["promotion-amount"]
+			if charge_type and charge_type != "Principal" and float(amount) != 0 and charge_type != "MarketplaceFacilitatorTax-Principal":
+				seller_sku = settlement["sku"]
+				charge_account = self.get_account(charge_type)
+				
+				charges_and_fees.get("charges").append(
+					{
+						"charge_type": "Actual",
+						"account_head": charge_account,
+						"tax_amount": amount,
+						"description": charge_type + " for " + seller_sku,
+						"cost_center": "Amazon - US - CML"
+					}
+				)
+		return charges_and_fees
+
 	def get_brand_analytics_report(self, data_start_time, data_end_time):
 		
 		report_id = self.create_report("GET_BRAND_ANALYTICS_SEARCH_TERMS_REPORT", data_start_time, data_end_time, {"reportPeriod": "DAY"})
@@ -803,10 +848,7 @@ class AmazonRepository:
 							decoded_line = line.decode("utf-8").replace("\t", "\n")
 							row = decoded_line.splitlines()
 							rows.append(row)
-							# counter = counter + 1
-							# print(counter)
-							# if(counter == 100):
-							# 	break
+							
 						fields = rows[0]
 						rows.pop(0)
 
@@ -818,10 +860,6 @@ class AmazonRepository:
 									if value not in uniqueOrderIds:
 										uniqueOrderIds.append(value)
 							reportDocumentsData.append(data_row)
-							# counter = counter + 1
-							# print(counter)
-							# if(counter == 200):
-							# 	break
 
 						return reportDocumentsData, uniqueOrderIds
 					raise (KeyError("url"))
@@ -908,3 +946,4 @@ def get_brand_analytics_report(amz_setting_name, data_start_time, data_end_time)
 def get_settlement_details(amz_setting_name, created_since, created_until):
 	amazon_repository = AmazonRepository(amz_setting_name)
 	return amazon_repository.get_settlement_details(created_since, created_until)
+	# return amazon_repository.create_payment_entry()
