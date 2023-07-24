@@ -10,7 +10,7 @@ app_email = "developers@frappe.io"
 app_license = "GNU GPL v3.0"
 
 # Includes in <head>
-# ------------------
+# -------------------
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/ecommerce_integrations/css/ecommerce_integrations.css"
