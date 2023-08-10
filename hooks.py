@@ -147,11 +147,6 @@ scheduler_events = {
 		"*/10 * * * *":[
 			"ecommerce_integrations.amazon.doctype.amazon_sp_api_settings.amazon_sp_api_settings.schedule_get_order_details_10_mins"
 		],
-		#Every day 09:00am
-		"00 09 * * *":[
-			"ecommerce_integrations.amazon.doctype.amazon_sp_api_settings.amazon_sp_api_settings.get_brand_analytics_report_hook"
-		]
-		,
 		#Every 13:30 on Thursday
 		"30 13 * * 4":[
 			"ecommerce_integrations.amazon.doctype.amazon_sp_api_settings.amazon_sp_api_settings.get_settlement_report"

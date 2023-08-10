@@ -1,7 +1,7 @@
 # Copyright (c) 2022, Frappe and contributors
 # For license information, please see license.txt
 
-from datetime import date
+from datetime import date, timedelta
 import time
 import urllib.request
 from json import dumps
@@ -753,11 +753,23 @@ class AmazonRepository:
 			# Send a ping to confirm a successful connection
 			try:
 				client.admin.command('ping')
-				print("Pinged your deployment. You successfully connected to MongoDB!")
+				prin
+t("Pinged your deployment. You successfully connected to MongoDB!")
 				database = client["Amazon-Sp-API-Reports"]
 				collection = database["Brand-Analytics-Report"]
 				
 				result = collection.insert_many(report_data)
+				current_date = date.today().isoformat()
+				days_before = (date.today()-timedelta(days=30)).isoformat()
+				query = {"data-insert-date": days_before}
+				deleted_data = collection.delete_many(query)
+				if(deleted_data):
+					collection2 = database["Archive-Brand-Analytics"]
+					collection2.insert_many(deleted_data)
+					current_date = date.today().isoformat()
+                                	days_before = (date.today()-timedelta(days=60)).isoformat()
+					query = {"data-insert-date": days_before}
+					collection2.delete_many(query)
 				print('Brnad Analytics Data added successfully!')
 			except Exception as e:
 				print(e)
@@ -901,6 +913,7 @@ class AmazonRepository:
 						print(data_length)
 						for i in range(data_length):
 							dataByDepartmentAndSearchTerm[i]["date-stamp"] = data_date
+							dataByDepartmentAndSearchTerm[i]["data-insert-date"] = date.today()
 						return dataByDepartmentAndSearchTerm
 					raise (KeyError("url"))
 				raise (KeyError("reportDocumentId"))
